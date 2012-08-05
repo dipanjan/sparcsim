@@ -7,6 +7,6 @@ gcc -c decode.c -o decode.o -I.
 gcc -c register.c -o register.o -I.
 gcc -c simulator.c -o simulator.o -I.
 
-gcc loader.o memory.o decode.o register.o simulator.o -o sparcsim.out -lelf
+gcc loader.o memory.o decode.o register.o simulator.o -o sparcsim -lelf
 
 rm -f *.o
