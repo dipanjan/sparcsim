@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <memory.h>
-#include <register.h>
 #include <decode.h>
 
 
@@ -11,8 +6,11 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 {
 	char* disassembledInstruction = (char*)malloc(50);
 	unsigned long instructionWord, hexDigit, op, disp30, rd, a, cond, op2, imm22, disp22, op3, rs1, asi, i, rs2, simm13, opf;
+	short fsr = 0, fq = 0, csr = 0, cq = 0;
 	char* hexNumber = (char*)malloc(32);
 	char* opcode = NULL;
+	char* address = NULL;
+	char* reg_or_imm = NULL;
 	
 	// Pack Quarword together
 	instructionWord = 0;
@@ -41,14 +39,21 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
     		
 			if(op2 == 4)
 			{				
-				// SETHI
 				rd = (instructionWord & 0x3E000000) >> 25; 
 				imm22 = instructionWord & 0x003FFFFF;
-				strcpy(disassembledInstruction, "sethi %hi(0x");
-				sprintf(hexNumber, "%lx", (imm22 << 10));
-				strcat(disassembledInstruction, hexNumber);
-				strcat(disassembledInstruction, "), ");
-				strcat(disassembledInstruction, getIntegerRegisterName(rd));
+				
+				// SETHI
+				if((rd == 0) && (imm22 == 0))
+					strcpy(disassembledInstruction, "nop");
+				else
+				{
+					// NOP
+					strcpy(disassembledInstruction, "sethi %hi(0x");
+					sprintf(hexNumber, "%lx", (imm22 << 10));
+					strcat(disassembledInstruction, hexNumber);
+					strcat(disassembledInstruction, "), ");
+					strcat(disassembledInstruction, getIntegerRegisterName(rd));
+				}
 			}
 			
 			else
@@ -157,114 +162,346 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
             asi = (instructionWord & 0x00001FE0) >> 5;
             opf = (instructionWord & 0x00003FE0) >> 5;
 			
-			switch(op3)
+			if(op == 3)
 			{
-				case 0b001001: opcode = "ldsb"; break;
-				case 0b001010: opcode = "ldsh"; break;
-				case 0b000001: opcode = "ldub"; break;
-				case 0b000010: opcode = "lduh"; break;
-				case 0b000000: opcode = "ld"; break;
-				case 0b000011: opcode = "ldd"; break;
-				case 0b011001: opcode = "ldsba"; break;
-				case 0b011010: opcode = "ldsha"; break;
-				case 0b010001: opcode = "lduba"; break;
-				case 0b010010: opcode = "lduha"; break;
-				case 0b010000: opcode = "lda"; break;
-				case 0b010011: opcode = "ldda"; break;
+				switch(op3)
+				{
+					// B.1. Load Integer Instructions
+					case 0b001001: opcode = "ldsb"; break;
+					case 0b001010: opcode = "ldsh"; break;
+					case 0b000001: opcode = "ldub"; break;
+					case 0b000010: opcode = "lduh"; break;
+					case 0b000000: opcode = "ld"; break;
+					case 0b000011: opcode = "ldd"; break;
+					case 0b011001: opcode = "ldsba"; break;
+					case 0b011010: opcode = "ldsha"; break;
+					case 0b010001: opcode = "lduba"; break;
+					case 0b010010: opcode = "lduha"; break;
+					case 0b010000: opcode = "lda"; break;
+					case 0b010011: opcode = "ldda"; break;
+					
+					// B.7. Atomic Load-Store Unsigned Byte Instructions
+					case 0b001101: opcode = "ldstub"; break;
+					case 0b011101: opcode = "ldstub"; break;
+					
+					// B.8. SWAP Register with Memory Instruction
+					case 0b001111: opcode = "swap"; break;
+					case 0b011111: opcode = "swapa"; break;
+					
+				}
+				
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					address = getAddress(rs1, rs2, i, simm13, 1);
+					strcat(disassembledInstruction, address);
+					strcat(disassembledInstruction, ", ");
+					strcat(disassembledInstruction, getIntegerRegisterName(rd));
+					opcode = NULL;
+				}
+				
+				
+				switch(op3)
+				{
+					// B.2. Load Floating-point Instructions
+					case 0b100000: opcode = "ld"; break;
+					case 0b100011: opcode = "ldd"; break;
+					case 0b100001: opcode = "ld"; fsr = 1; break;
+				}
+				
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					address = getAddress(rs1, rs2, i, simm13, 2);
+					strcat(disassembledInstruction, address);
+					strcat(disassembledInstruction, ", ");
+					if(fsr == 1)
+						strcat(disassembledInstruction, "%fsr");
+					else
+						strcat(disassembledInstruction, getFloatingRegisterName(rd));
+					opcode = NULL;
+				}
+				
+				
+				switch(op3)
+				{
+					// B.3. Load Coprocessor Instructions
+					case 0b110000: opcode = "ld"; break;
+					case 0b110011: opcode = "ldd"; break;
+					case 0b110001: opcode = "ld"; csr = 1; break;
+				}
+				
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					address = getAddress(rs1, rs2, i, simm13, 3);
+					strcat(disassembledInstruction, address);
+					strcat(disassembledInstruction, ", ");
+					if(csr == 1)
+						strcat(disassembledInstruction, "%csr");
+					else
+						strcat(disassembledInstruction, getCoProcessorRegisterName(rd));
+					opcode = NULL;
+				}
+				
+				
+				switch(op3)
+				{
+					// B.4. Store Integer Instructions
+					case 0b000101: opcode = "stb"; break;
+					case 0b000110: opcode = "sth"; break;
+					case 0b000100: opcode = "st"; break;
+					case 0b000111: opcode = "std"; break;
+					case 0b010101: opcode = "stba"; break;
+					case 0b010110: opcode = "stha"; break;
+					case 0b010100: opcode = "sta"; break;
+					case 0b010111: opcode = "stda"; break;
+				}
+				
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					strcat(disassembledInstruction, getIntegerRegisterName(rd));
+					strcat(disassembledInstruction, ", ");
+					address = getAddress(rs1, rs2, i, simm13, 1);
+					strcat(disassembledInstruction, address);				
+					opcode = NULL;
+				}
+				
+				
+				switch(op3)
+				{
+					// B.5. Store Floating-point Instructions
+					case 0b100100: opcode = "st"; break;
+					case 0b100111: opcode = "std"; break;
+					case 0b100101: opcode = "st"; fsr = 1; break;
+					case 0b100110: opcode = "std"; fq = 1; break;
+				}
+				
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					if(fsr == 1)
+						strcat(disassembledInstruction, "%fsr");
+					else
+						if(fq == 1)
+							strcat(disassembledInstruction, "%fq");
+						else
+							strcat(disassembledInstruction, getFloatingRegisterName(rd));
+					strcat(disassembledInstruction, ", ");
+					address = getAddress(rs1, rs2, i, simm13, 1);
+					strcat(disassembledInstruction, address);				
+					opcode = NULL;
+				}
+				
+				
+				switch(op3)
+				{
+					// B.6. Store Coprocessor Instructions
+					case 0b110100: opcode = "st"; break;
+					case 0b110111: opcode = "std"; break;
+					case 0b110101: opcode = "st"; csr = 1; break;
+					case 0b110110: opcode = "std"; cq = 1; break;
+				}
+				
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					if(csr == 1)
+						strcat(disassembledInstruction, "%csr");
+					else
+						if(cq == 1)
+							strcat(disassembledInstruction, "%cq");
+						else
+							strcat(disassembledInstruction, getCoProcessorRegisterName(rd));
+					strcat(disassembledInstruction, ", ");
+					address = getAddress(rs1, rs2, i, simm13, 1);
+					strcat(disassembledInstruction, address);				
+					opcode = NULL;
+				}
 			}
 			
-			if(opcode != NULL)
+			// op = 2
+			else
 			{
-				strcpy(disassembledInstruction, opcode);
-				strcat(disassembledInstruction, " [");
-				if(rs1 != 0)
+				switch(op3)
 				{
-					strcat(disassembledInstruction, getIntegerRegisterName(rs1));
-					strcat(disassembledInstruction, " + ");
+					// B.11. Logical Instructions
+					case 0b000001: opcode = "and"; break;
+					case 0b100001: opcode = "andcc"; break;
+					case 0b000101: opcode = "andn"; break;
+					case 0b010101: opcode = "andncc"; break;
+					case 0b000010: opcode = "or"; break;
+					case 0b010010: opcode = "orcc"; break;
+					case 0b000110: opcode = "orn"; break;
+					case 0b010110: opcode = "orncc"; break;
+					case 0b000011: opcode = "xor"; break;
+					case 0b010011: opcode = "xorcc"; break;
+					case 0b000111: opcode = "xnor"; break;
+					case 0b010111: opcode = "xnorcc"; break;
+					
+					// B.12. Shift Instructions
+					case 0b100101: opcode = "sll"; break;
+					case 0b100110: opcode = "srl"; break;
+					case 0b100111: opcode = "sra"; break;
+					
+					// B.13. Add Instructions
+					case 0b000000: opcode = "add"; break;
+					case 0b010000: opcode = "addcc"; break;
+					case 0b001000: opcode = "addx"; break;
+					case 0b011000: opcode = "addxcc"; break;
+					
+					// B.14. Tagged Add Instructions
+					case 0b100000: opcode = "taddcc"; break;
+					case 0b100010: opcode = "taddcctv"; break;
 				}
-				if(i == 0) 
+				
+				if(opcode != NULL)
 				{
-					if(rs2 != 0)
-						strcat(disassembledInstruction, getIntegerRegisterName(rs2));
-				}
-				else
-				{
-					sprintf(hexNumber, "0x%lx", simm13);
-					strcat(disassembledInstruction, hexNumber);
-				}
-				strcat(disassembledInstruction, "], ");
-				strcat(disassembledInstruction, getIntegerRegisterName(rd));
-				opcode = NULL;
-			}
-			
-			
-			switch(op3)
-			{
-				case 0b100000: opcode = "ld"; break;
-				case 0b100011: opcode = "ldd"; break;
-				case 0b100001: opcode = "ld"; break;
-			}
-			
-			if(opcode != NULL)
-			{
-				strcpy(disassembledInstruction, opcode);
-				strcat(disassembledInstruction, " [");
-				if(rs1 != 0)
-				{
-					strcat(disassembledInstruction, getFlotingRegisterName(rs1));
-					strcat(disassembledInstruction, " + ");
-				}
-				if(i == 0) 
-				{
-					if(rs2 != 0)
-						strcat(disassembledInstruction, getFlotingRegisterName(rs2));
-				}
-				else
-				{
-					sprintf(hexNumber, "0x%lx", simm13);
-					strcat(disassembledInstruction, hexNumber);
-				}
-				strcat(disassembledInstruction, "], ");
-				strcat(disassembledInstruction, getFlotingRegisterName(rd));
-				opcode = NULL;
-			}
-			
-			
-			switch(op3)
-			{
-				case 0b110000: opcode = "ld"; break;
-				case 0b110011: opcode = "ldd"; break;
-				case 0b110001: opcode = "ld"; break;
-			}
-			
-			if(opcode != NULL)
-			{
-				strcpy(disassembledInstruction, opcode);
-				strcat(disassembledInstruction, " [");
-				if(rs1 != 0)
-				{
-					strcat(disassembledInstruction, getCoProcessorRegisterName(rs1));
-					strcat(disassembledInstruction, " + ");
-				}
-				if(i == 0) 
-				{
-					if(rs2 != 0)
-						strcat(disassembledInstruction, getCoProcessorRegisterName(rs2));
-				}
-				else
-				{
-					sprintf(hexNumber, "0x%lx", simm13);
-					strcat(disassembledInstruction, hexNumber);
-				}
-				strcat(disassembledInstruction, "], ");
-				strcat(disassembledInstruction, getCoProcessorRegisterName(rd));
-				opcode = NULL;
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					strcat(disassembledInstruction, getIntegerRegisterName(rs1));		
+					strcat(disassembledInstruction, ", ");
+					reg_or_imm = getReg_Or_Imm(rs2, i, simm13, 1);
+					strcat(disassembledInstruction, reg_or_imm);
+					strcat(disassembledInstruction, ", ");
+					strcat(disassembledInstruction, getIntegerRegisterName(rd));
+					opcode = NULL;
+				}	
 			}
         }
 		
+	if(address != NULL)
+		free(address);
+	if(reg_or_imm != NULL)
+		free(reg_or_imm);
 	free(hexNumber);
 	return disassembledInstruction;
 }
+
+
+
+char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned long simm13, int registerTypeIdentifier)
+{
+	char* address = (char*)malloc(30);
+	char* hexNumber = (char*)malloc(32);
+	strcpy(address, "[");
+	if(rs1 != 0)
+	{
+		switch(registerTypeIdentifier)
+		{
+			case 1: strcat(address, getIntegerRegisterName(rs1)); break;           // Integer register
+			case 2: strcat(address, getFloatingRegisterName(rs1)); break;          // Floating point register
+			case 3: strcat(address, getCoProcessorRegisterName(rs1)); break;       // Co-Processor register
+		}
+		strcat(address, " + ");
+	}
+	if(i == 0) 
+	{
+		if(rs2 != 0)
+			switch(registerTypeIdentifier)
+			{
+				case 1: strcat(address, getIntegerRegisterName(rs1)); break;       // Integer register
+				case 2: strcat(address, getFloatingRegisterName(rs1)); break;      // Floating point register
+				case 3: strcat(address, getCoProcessorRegisterName(rs1)); break;   // Co-Processor register
+			}
+	}
+	else
+	{
+		sprintf(hexNumber, "0x%lx", simm13);
+		strcat(address, hexNumber);
+	}
+	strcat(address, "]");
+	free(hexNumber);
+	return address;
+}
+
+
+
+char* getReg_Or_Imm(unsigned long rs2, unsigned long i, unsigned long simm13, int registerTypeIdentifier)
+{
+	char* address = (char*)malloc(30);
+	char* hexNumber = (char*)malloc(32);
+	
+	if(i == 0) 
+	{
+		switch(registerTypeIdentifier)
+		{
+			case 1: strcpy(address, getIntegerRegisterName(rs2)); break;       // Integer register
+			case 2: strcpy(address, getFloatingRegisterName(rs2)); break;      // Floating point register
+			case 3: strcpy(address, getCoProcessorRegisterName(rs2)); break;   // Co-Processor register
+		}
+	}
+	else
+	{
+		sprintf(hexNumber, "0x%lx", simm13);
+		strcpy(address, hexNumber);
+	}
+	free(hexNumber);
+	return address;
+}
+
+
+
+char* getIntegerRegisterName(unsigned long registerIdentifier)
+{
+	char* registerName = (char*) malloc(4);
+	char* registerIndex = (char*)malloc(2);
+	
+	if((registerIdentifier >= 0) && (registerIdentifier <=7))
+		strcpy(registerName, "%g");
+	else
+		if((registerIdentifier >= 8) && (registerIdentifier <=15))
+			strcpy(registerName, "%o");
+		else
+			if((registerIdentifier >= 16) && (registerIdentifier <=23))
+				strcpy(registerName, "%l");
+			else
+				strcpy(registerName, "%i");
+	
+	sprintf(registerIndex, "%ld", (registerIdentifier % 8));
+	strcat(registerName, registerIndex);
+	
+	free(registerIndex);
+	return registerName;
+}
+
+
+
+char* getFloatingRegisterName(unsigned long registerIdentifier)
+{
+	char* registerName = (char*) malloc(4);
+	char* registerIndex = (char*)malloc(3);
+	
+	strcpy(registerName, "%f");
+	sprintf(registerIndex, "%ld", registerIdentifier);
+	strcat(registerName, registerIndex);
+	
+	free(registerIndex);
+	return registerName;
+}
+
+
+
+char* getCoProcessorRegisterName(unsigned long registerIdentifier)
+{
+	char* registerName = (char*) malloc(4);
+	char* registerIndex = (char*)malloc(3);
+	
+	strcpy(registerName, "%f");
+	sprintf(registerIndex, "%ld", registerIdentifier);
+	strcat(registerName, registerIndex);
+	
+	free(registerIndex);
+	return registerName;
+}
+
 
 
 /*int main()
