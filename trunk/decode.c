@@ -64,7 +64,14 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				
 				switch(op2)
 				{
-					// Bicc
+					// B.31. Unimplemented Instruction
+					case 0: 
+					strcpy(disassembledInstruction, "unimp 0x");
+					sprintf(hexNumber, "%lx", disp22);
+					strcat(disassembledInstruction, hexNumber);
+					break;
+					
+					// B.21. Branch on Integer Condition Codes Instructions
 					case 2:
 					{
 						switch(cond)
@@ -89,7 +96,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 						break;
 					}
 					
-					// FBfcc
+					// B.22. Branch on Floating- point Condition Codes Instructions
 					case 6:
 					{
 						switch(cond)
@@ -114,7 +121,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 						break;
 					}
 					
-					// CBccc
+					// B.23. Branch on Coprocessor Condition Codes Instructions
 					case 7:
 					{
 						switch(cond)
@@ -162,6 +169,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
             asi = (instructionWord & 0x00001FE0) >> 5;
             opf = (instructionWord & 0x00003FE0) >> 5;
 			
+			// op = 3
 			if(op == 3)
 			{
 				switch(op3)
@@ -334,7 +342,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				{
 					// B.11. Logical Instructions
 					case 0b000001: opcode = "and"; break;
-					case 0b100001: opcode = "andcc"; break;
+					case 0b010001: opcode = "andcc"; break;
 					case 0b000101: opcode = "andn"; break;
 					case 0b010101: opcode = "andncc"; break;
 					case 0b000010: opcode = "or"; break;
@@ -360,6 +368,35 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 					// B.14. Tagged Add Instructions
 					case 0b100000: opcode = "taddcc"; break;
 					case 0b100010: opcode = "taddcctv"; break;
+					
+					// B.15. Subtract Instructions
+					case 0b000100: opcode = "sub"; break;
+					case 0b010100: opcode = "subcc"; break;
+					case 0b001100: opcode = "subx"; break;
+					case 0b011100: opcode = "subxcc"; break;
+					
+					// B.16. Tagged Subtract Instructions
+					case 0b100001: opcode = "tsubcc"; break;
+					case 0b100011: opcode = "tsubcctv"; break;
+					
+					// B.17. Multiply Step Instruction
+					case 0b100100: opcode = "mulscc"; break;
+					
+					// B.18. Multiply Instructions
+					case 0b001010: opcode = "umul"; break;
+					case 0b001011: opcode = "smul"; break;
+					case 0b011010: opcode = "umulcc"; break;
+					case 0b011011: opcode = "smulcc"; break;
+					
+					// B.19. Divide Instructions
+					case 0b001110: opcode = "udiv"; break;
+					case 0b001111: opcode = "sdiv"; break;
+					case 0b011110: opcode = "udivcc"; break;
+					case 0b011111: opcode = "sdivcc"; break;
+					
+					// B.20. SAVE and RESTORE Instructions
+					case 0b111100: opcode = "save"; break;
+					case 0b111101: opcode = "restore"; break;
 				}
 				
 				if(opcode != NULL)
@@ -373,7 +410,44 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 					strcat(disassembledInstruction, ", ");
 					strcat(disassembledInstruction, getIntegerRegisterName(rd));
 					opcode = NULL;
-				}	
+				}
+				
+				
+				switch(op3)
+				{
+					// B.25. Jump and Link Instruction
+					case 0b111000: opcode = "jmpl"; break;
+				}
+				
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					address = getAddress(rs1, rs2, i, simm13, 1);
+					strcat(disassembledInstruction, address);
+					strcat(disassembledInstruction, ", ");
+					strcat(disassembledInstruction, getIntegerRegisterName(rd));
+					opcode = NULL;
+				}
+				
+				
+				switch(op3)
+				{
+					// B.25. Jump and Link Instruction
+					case 0b111001: opcode = "rett"; break;
+					
+					// B.32. Flush Instruction Memory
+					case 0b111011: opcode = "flush"; break;
+				}
+				
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					address = getAddress(rs1, rs2, i, simm13, 1);
+					strcat(disassembledInstruction, address);
+					opcode = NULL;
+				}
 			}
         }
 		
