@@ -201,10 +201,10 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				if(opcode != NULL)
 				{
 					strcpy(disassembledInstruction, opcode);
-					strcat(disassembledInstruction, " ");
+					strcat(disassembledInstruction, " [ ");
 					address = getAddress(rs1, rs2, i, simm13, 1);
 					strcat(disassembledInstruction, address);
-					strcat(disassembledInstruction, ", ");
+					strcat(disassembledInstruction, " ], ");
 					strcat(disassembledInstruction, getIntegerRegisterName(rd));
 					opcode = NULL;
 				}
@@ -221,10 +221,10 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				if(opcode != NULL)
 				{
 					strcpy(disassembledInstruction, opcode);
-					strcat(disassembledInstruction, " ");
+					strcat(disassembledInstruction, " [ ");
 					address = getAddress(rs1, rs2, i, simm13, 2);
 					strcat(disassembledInstruction, address);
-					strcat(disassembledInstruction, ", ");
+					strcat(disassembledInstruction, " ], ");
 					if(fsr == 1)
 						strcat(disassembledInstruction, "%fsr");
 					else
@@ -244,10 +244,10 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				if(opcode != NULL)
 				{
 					strcpy(disassembledInstruction, opcode);
-					strcat(disassembledInstruction, " ");
+					strcat(disassembledInstruction, " [ ");
 					address = getAddress(rs1, rs2, i, simm13, 3);
 					strcat(disassembledInstruction, address);
-					strcat(disassembledInstruction, ", ");
+					strcat(disassembledInstruction, " ], ");
 					if(csr == 1)
 						strcat(disassembledInstruction, "%csr");
 					else
@@ -274,9 +274,10 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 					strcpy(disassembledInstruction, opcode);
 					strcat(disassembledInstruction, " ");
 					strcat(disassembledInstruction, getIntegerRegisterName(rd));
-					strcat(disassembledInstruction, ", ");
+					strcat(disassembledInstruction, ", [ ");
 					address = getAddress(rs1, rs2, i, simm13, 1);
-					strcat(disassembledInstruction, address);				
+					strcat(disassembledInstruction, address);
+					strcat(disassembledInstruction, " ]");					
 					opcode = NULL;
 				}
 				
@@ -301,9 +302,10 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 							strcat(disassembledInstruction, "%fq");
 						else
 							strcat(disassembledInstruction, getFloatingRegisterName(rd));
-					strcat(disassembledInstruction, ", ");
+					strcat(disassembledInstruction, ", [ ");
 					address = getAddress(rs1, rs2, i, simm13, 1);
-					strcat(disassembledInstruction, address);				
+					strcat(disassembledInstruction, address);
+					strcat(disassembledInstruction, " ]");					
 					opcode = NULL;
 				}
 				
@@ -328,9 +330,10 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 							strcat(disassembledInstruction, "%cq");
 						else
 							strcat(disassembledInstruction, getCoProcessorRegisterName(rd));
-					strcat(disassembledInstruction, ", ");
+					strcat(disassembledInstruction, ", [ ");
 					address = getAddress(rs1, rs2, i, simm13, 1);
-					strcat(disassembledInstruction, address);				
+					strcat(disassembledInstruction, address);
+					strcat(disassembledInstruction, " ]");					
 					opcode = NULL;
 				}
 			}
@@ -465,7 +468,8 @@ char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned
 {
 	char* address = (char*)malloc(30);
 	char* hexNumber = (char*)malloc(32);
-	strcpy(address, "[");
+	address[0] = '\0';
+	
 	if(rs1 != 0)
 	{
 		switch(registerTypeIdentifier)
@@ -491,7 +495,7 @@ char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned
 		sprintf(hexNumber, "0x%lx", simm13);
 		strcat(address, hexNumber);
 	}
-	strcat(address, "]");
+	
 	free(hexNumber);
 	return address;
 }
