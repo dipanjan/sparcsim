@@ -464,6 +464,14 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 
 
 
+char* decodeSyntheticInstruction(char* disassembledInstruction)
+{
+	char* syntheticInstruction = (char*)malloc(50);
+	
+}
+
+
+
 char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned long simm13, int registerTypeIdentifier)
 {
 	char* address = (char*)malloc(30);
