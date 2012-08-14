@@ -13,7 +13,7 @@ int testBit(unsigned long bitStream, int position)
 
 unsigned long setBit(unsigned long bitStream, int position)
 {
-	unsigned long setBitStream;
+	unsigned long setBitStream = bitStream;
 	setBitStream |= 1 << position;
 	return setBitStream;
 }
@@ -22,7 +22,7 @@ unsigned long setBit(unsigned long bitStream, int position)
 
 unsigned long clearBit(unsigned long bitStream, int position)
 {
-	unsigned long clearedBitStream;
+	unsigned long clearedBitStream = bitStream;
 	clearedBitStream &= ~(1 << position);
 	return clearedBitStream;
 }
@@ -31,7 +31,7 @@ unsigned long clearBit(unsigned long bitStream, int position)
 
 unsigned long toggleBit(unsigned long bitStream, int position)
 {
-	unsigned long toggledBitStream;
+	unsigned long toggledBitStream = bitStream;
 	toggledBitStream ^= 1 << position;
 	return toggledBitStream;
 }
@@ -51,13 +51,13 @@ char* showBits(unsigned long bitStream, int startPosition, int endPosition)
 
 
 
-void main()
+/*int main()
 {
-	printf("%d\n", testBit(0x00001FE1, 5));
-	printf("%lx\n", setBit(0x1FE1, 3));
-	printf("%s\n", showBits(0x00001FE1, 0, 12));
-	printf("%s\n", showBits(setBit(0x00001FE1, 3), 0, 12));
-	printf("%s\n", showBits(clearBit(0x00001FE1, 0), 0, 12));
-	printf("%s\n", showBits(toggleBit(0x00001FE1, 3), 0, 12));
-	printf("%s\n", showBits(toggleBit(0x00001FE1, 0), 0, 12));
-}
+    printf("testBit  : %d\n", testBit(0x00009FE1, 4));
+	printf("showBits : %s\n", showBits(0x00009FE1, 0, 15));
+	printf("setBit   : %s\n", showBits(setBit(0x00009FE1, 3), 0, 15));
+	printf("clearBit : %s\n", showBits(clearBit(0x00009FE1, 0), 0, 15));
+	printf("toggleBit: %s\n", showBits(toggleBit(0x00009FE1, 3), 0, 15));
+	printf("toggleBit: %s\n", showBits(toggleBit(0x00009FE1, 0), 0, 15));
+	return 0;
+}*/
