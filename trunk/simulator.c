@@ -1,10 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <loader.h>
-#include <memory.h>
 #include <simulator.h>
-#include <constants.h>
 
 
 
@@ -15,6 +9,7 @@ int main(int argc, char* argv[])
 	char simulatorCommand[MAX_INPUT_LENGTH];
 	
 	initializeMemory();
+    initializeRegisters();
 
 	printf("\nSPARC v8 Simulator\n");
 	printf("******************\n");
@@ -25,7 +20,7 @@ int main(int argc, char* argv[])
 	
 	while(1)
 	{
-		printf("sparcsim>");
+		printf("\nsparcsim>");
 		fgets(simulatorCommand, MAX_INPUT_LENGTH, stdin);
 		if(processSimulatorCommand(simulatorCommand) == RET_QUIT)
 			return RET_SUCCESS;
@@ -37,21 +32,30 @@ int main(int argc, char* argv[])
 
 int processSimulatorCommand(char* simulatorCommand)
 {
-	char* command = NULL, *firstParametre = NULL, *secondParametre = NULL;
-	long int firstNumericParametre, secondNumericParametre;
+	char* command = NULL, *firstParametre = NULL, *secondParametre = NULL, *arguments = (char*)malloc(50);
+	unsigned long firstNumericParametre, secondNumericParametre;
 	const char delimiters[] = " \n";
 	char* hexNumber = (char*)malloc(32);
 	
+	strcpy(arguments, simulatorCommand);
 	command = strtok(simulatorCommand, delimiters); 
 	firstParametre = strtok(NULL, delimiters);
 	if(firstParametre != NULL)
+	{
 		secondParametre = strtok(NULL, delimiters);
+		firstNumericParametre = strtol(firstParametre, NULL, 0);
+    }
 	if(secondParametre != NULL)
+	{
 		while(strtok(NULL, delimiters));
+		secondNumericParametre = strtol(secondParametre, NULL, 0);
+    }
+	
 	
 	// Quit
 	if(!(strcmp(command, "quit") && strcmp(command, "q")))
 		return RET_QUIT;
+	
 	
 	// help
 	if(!(strcmp(command, "help") && strcmp(command, "h")))
@@ -59,11 +63,16 @@ int processSimulatorCommand(char* simulatorCommand)
 		printf("\n\tsparcsim  [file_name]    |  load a file into simulator memory\n");
 		printf("\t[l]oad  <file_name>      |  load a file into simulator memory\n");
 		printf("\t[m]em [addr] [count]     |  display memory at [addr] for [count] bytes\n");
-		printf("\t[d]is [addr] [count]     |  disassemble [count] instructions at address [addr]");
+		printf("\t[w]mem <addr> <val>      |  write memory word at <addr> with value <val>\n");
+		printf("\t[r]eg [reg] [val]        |  show/set integer registers (or windows, eg 're w2'\n");
+		printf("\t[d]is [addr] [count]     |  disassemble [count] instructions at address [addr]\n");
 		printf("\t[h]elp                   |  display this help\n");
+		printf("\t[e]cho <string>          |  print <string> to the simulator window\n");
+		printf("\t[s]hell <cmd>            |  execute shell command\n");
 		printf("\t[q]uit                   |  exit the simulator\n\n");
 		return RET_SUCCESS;
 	}
+	
 	
 	// [l]oad
 	if(!(strcmp(command, "load") && strcmp(command, "l")))
@@ -71,15 +80,6 @@ int processSimulatorCommand(char* simulatorCommand)
 		load_sparc_elf(firstParametre);
 		return RET_SUCCESS;
 	}
-	
-	
-	// Here starts the commands with both numeric parametres
-	
-	
-	if(firstParametre != NULL)
-		firstNumericParametre = strtol(firstParametre, NULL, 0);
-	if(secondParametre != NULL)
-		secondNumericParametre = strtol(secondParametre, NULL, 0);
 	
 	
 	// [m]em
@@ -90,17 +90,123 @@ int processSimulatorCommand(char* simulatorCommand)
 		else
 			if(secondParametre == NULL)
 			{
-				getMemoryArea(firstNumericParametre, 64);
+				displayMemoryArea(firstNumericParametre, 64);
 				return RET_SUCCESS;
 			}
 			else
 			{
-				getMemoryArea(firstNumericParametre, secondNumericParametre);
+				displayMemoryArea(firstNumericParametre, secondNumericParametre);
 				return RET_SUCCESS;
 			}
 	}
 	
 	
+	// [w]mem
+	if(!(strcmp(command, "wmem") && strcmp(command, "w")))
+	{
+		if(firstParametre == NULL && secondParametre == NULL)
+			return RET_FAILURE;
+		else
+		{
+			char* bytePointer = (char*)&secondNumericParametre;
+			unsigned short count;
+			for(count = 0; count < 4; count++)
+				writeMemory(firstNumericParametre + (3 - count), *(bytePointer + count));
+		}
+	}
+	
+	
+	// [e]cho
+	if(!(strcmp(command, "echo") && strcmp(command, "e")))
+	{
+		if(firstParametre == NULL)
+			return RET_FAILURE;
+		else
+		{
+			puts(firstParametre);
+			return RET_SUCCESS;
+		}
+	}
+	
+	
+	// [s]hell
+	if(!(strcmp(command, "shell") && strcmp(command, "s")))
+	{
+		if(firstParametre == NULL)
+			return RET_FAILURE;
+		else
+		{
+			char* argumentBase = arguments;
+			while(*arguments++ != ' ' );
+			printf("\n");
+			system(arguments);
+			free(argumentBase);
+			return RET_SUCCESS;
+		}
+	}
+	
+	
+    //[r]eg
+    if(!(strcmp(command, "reg") && strcmp(command, "r")))
+	{
+		char* registerValue;
+		char sparcRegister[3];
+		unsigned short count;
+		sparcRegister[2] = '\0';
+		
+		if(firstParametre != NULL && secondParametre != NULL)
+			setRegister(firstParametre, secondNumericParametre);
+		else
+		{
+			printf("\n\t\t    INS\t\t   LOCALS\t    OUTS\t  GLOBALS\n\n");
+			
+			for(count = 0; count < 8; count++)
+			{
+				sparcRegister[1] = count + '0'; 
+				
+				sparcRegister[0] = 'i'; 
+				registerValue = displayRegister(getRegister(sparcRegister));
+				printf("\t%d:\t %s", count, registerValue);
+				free(registerValue);
+				
+				
+				sparcRegister[0] = 'l'; 
+				registerValue = displayRegister(getRegister(sparcRegister));
+				printf("\t %s", registerValue);
+				free(registerValue);
+				
+				sparcRegister[0] = 'o'; 
+				registerValue = displayRegister(getRegister(sparcRegister));
+				printf("\t %s", registerValue);
+				free(registerValue);
+				
+				sparcRegister[0] = 'g';
+				registerValue = displayRegister(getRegister(sparcRegister));
+				printf("\t %s\n", registerValue);
+				free(registerValue);
+			}
+		
+			registerValue = displayRegister(getRegister("psr"));
+			printf("\n\tpsr: %s", registerValue);
+			free(registerValue);
+			
+			registerValue = displayRegister(getRegister("wim"));
+			printf("\t\twim: %s", registerValue);
+			free(registerValue);
+			
+			registerValue = displayRegister(getRegister("tbr"));
+			printf("\t\ttbr: %s", registerValue);
+			free(registerValue);
+			
+			registerValue = displayRegister(getRegister("y"));
+			printf("\t\ty: %s\n\n", registerValue);
+			free(registerValue);
+		}
+		
+		return RET_SUCCESS;
+	}
+	
+    	
 	// [d]is
 	if(!(strcmp(command, "dis") && strcmp(command, "d")))
 	{
@@ -108,9 +214,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			return RET_FAILURE;
 		else
 			if(secondParametre == NULL)
-			{
 				secondNumericParametre = 16;
-			}
 			
 		unsigned long instructionCount;
 		char* cpuInstruction;
@@ -130,7 +234,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		
 		free(cpuInstruction);
 		free(disassembledInstruction);
-		printf("\n\n");
+		printf("\n");
 		return RET_SUCCESS;
 	}
 	

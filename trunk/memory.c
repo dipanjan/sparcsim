@@ -112,7 +112,7 @@ char* getQuadWordFromMemory(unsigned long memoryAddress)
 }
 
 
-void getMemoryArea(unsigned long memoryAddress, int count)
+void displayMemoryArea(unsigned long memoryAddress, int count)
 {
 	int counter;
 	char* quadWord;
