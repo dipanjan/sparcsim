@@ -42,12 +42,12 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				rd = (instructionWord & 0x3E000000) >> 25; 
 				imm22 = instructionWord & 0x003FFFFF;
 				
-				// SETHI
+				// NOP
 				if((rd == 0) && (imm22 == 0))
 					strcpy(disassembledInstruction, "nop");
 				else
 				{
-					// NOP
+					// SETHI
 					strcpy(disassembledInstruction, "sethi %hi(0x");
 					sprintf(hexNumber, "%lx", (imm22 << 10));
 					strcat(disassembledInstruction, hexNumber);
@@ -464,11 +464,11 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 
 
 
-char* decodeSyntheticInstruction(char* disassembledInstruction)
+/*char* decodeSyntheticInstruction(char* disassembledInstruction)
 {
 	char* syntheticInstruction = (char*)malloc(50);
-	
-}
+	return NULL;
+}*/
 
 
 

@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <memory.h>
 
 
+
 char** firstPageTable[1024];
+
 
 
 void initializeMemory()
@@ -45,10 +45,8 @@ int allocateMemory(unsigned long memoryAddress)
 				return -1;
 			}
 		}
-		
-		return 0;
 	}
-
+	return 0;
 	//printf("Alloc: Second page table: %u\n", firstPageTable[firstPageTableIndex]);
 	//printf("Alloc: Page: %u\n", secondPageTable[secondPageTableIndex]);
 	//printf("First Page Table Index: %d\n", firstPageTableIndex);
@@ -73,12 +71,20 @@ void writeMemory(unsigned long memoryAddress, char byte)
 
 char readMemory(unsigned long memoryAddress)
 {
+	char** secondPageTable;
+	char* page;
 	int firstPageTableIndex = memoryAddress >> 22;
 	int secondPageTableIndex = (memoryAddress << 10) >> 22;
 	int offset = (memoryAddress << 20) >> 20;
 
-	char** secondPageTable = firstPageTable[firstPageTableIndex]; //printf("Read: Second page table: %u\n", secondPageTable);
-	char* page = secondPageTable[secondPageTableIndex]; //printf("Read: Page: %u\n", page);
+	if(firstPageTable[firstPageTableIndex] == NULL)
+		return (char)0;
+	else
+		secondPageTable = firstPageTable[firstPageTableIndex]; //printf("Read: Second page table: %u\n", secondPageTable);
+	if(secondPageTable[secondPageTableIndex] == NULL)
+		return (char)0;
+	else
+		page = secondPageTable[secondPageTableIndex]; //printf("Read: Page: %u\n", page);
 	return *(page + offset);
 }
 
@@ -143,7 +149,7 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 		
 		memoryAddress += 16;		
 	}
-	printf("\n\n");
+	printf("\n");
 }
 
 

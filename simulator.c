@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 int processSimulatorCommand(char* simulatorCommand)
 {
 	char* command = NULL, *firstParametre = NULL, *secondParametre = NULL, *arguments = (char*)malloc(50);
-	unsigned long firstNumericParametre, secondNumericParametre;
+	unsigned long firstNumericParametre = 0, secondNumericParametre = 0;
 	const char delimiters[] = " \n";
 	char* hexNumber = (char*)malloc(32);
 	
@@ -64,11 +64,11 @@ int processSimulatorCommand(char* simulatorCommand)
 		printf("\t[l]oad  <file_name>      |  load a file into simulator memory\n");
 		printf("\t[m]em [addr] [count]     |  display memory at [addr] for [count] bytes\n");
 		printf("\t[w]mem <addr> <val>      |  write memory word at <addr> with value <val>\n");
-		printf("\t[r]eg [reg] [val]        |  show/set integer registers (or windows, eg 're w2'\n");
+		printf("\t[r]eg [reg] [val]        |  show/set integer registers (or windows, eg 'reg w2'\n");
 		printf("\t[d]is [addr] [count]     |  disassemble [count] instructions at address [addr]\n");
 		printf("\t[h]elp                   |  display this help\n");
 		printf("\t[e]cho <string>          |  print <string> to the simulator window\n");
-		printf("\t[s]hell <cmd>            |  execute shell command\n");
+		printf("\t[sh]ell <cmd>            |  execute shell command\n");
 		printf("\t[q]uit                   |  exit the simulator\n\n");
 		return RET_SUCCESS;
 	}
@@ -116,6 +116,21 @@ int processSimulatorCommand(char* simulatorCommand)
 	}
 	
 	
+	if(!(strcmp(command, "step") && strcmp(command, "s")))
+	{
+		char* cpuInstruction, *disassembledInstruction;
+		unsigned long regPC;
+
+		regPC = getRegister("pc");
+		cpuInstruction = getQuadWordFromMemory(regPC);
+		disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+		executeInstruction(disassembledInstruction, regPC);
+
+		free(cpuInstruction);
+		free(disassembledInstruction);
+	}
+
+
 	// [e]cho
 	if(!(strcmp(command, "echo") && strcmp(command, "e")))
 	{
@@ -129,8 +144,8 @@ int processSimulatorCommand(char* simulatorCommand)
 	}
 	
 	
-	// [s]hell
-	if(!(strcmp(command, "shell") && strcmp(command, "s")))
+	// [sh]ell
+	if(!(strcmp(command, "shell") && strcmp(command, "sh")))
 	{
 		if(firstParametre == NULL)
 			return RET_FAILURE;
@@ -149,8 +164,9 @@ int processSimulatorCommand(char* simulatorCommand)
     //[r]eg
     if(!(strcmp(command, "reg") && strcmp(command, "r")))
 	{
-		char* registerValue;
+		char* registerValue, *cpuInstruction, *disassembledInstruction;
 		char sparcRegister[3];
+		unsigned long regPC;
 		unsigned short count;
 		sparcRegister[2] = '\0';
 		
@@ -201,6 +217,30 @@ int processSimulatorCommand(char* simulatorCommand)
 			registerValue = displayRegister(getRegister("y"));
 			printf("\t\ty: %s\n\n", registerValue);
 			free(registerValue);
+			
+			regPC = getRegister("pc");
+			registerValue = displayRegister(regPC);
+			cpuInstruction = getQuadWordFromMemory(regPC);
+			disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+			printf("\n\t pc:  %s\t", registerValue);
+			displayQuadWord(cpuInstruction, 1);
+			printf("\t%s", disassembledInstruction);			
+			free(cpuInstruction);
+			free(disassembledInstruction);
+			free(registerValue);
+			
+			regPC = getRegister("npc");
+			registerValue = displayRegister(regPC);
+			cpuInstruction = getQuadWordFromMemory(regPC);
+			disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+			printf("\n\tnpc:  %s\t", registerValue);
+			displayQuadWord(cpuInstruction, 1);
+			printf("\t%s", disassembledInstruction);
+			free(cpuInstruction);
+			free(disassembledInstruction);
+			free(registerValue);
+			
+			printf("\n");
 		}
 		
 		return RET_SUCCESS;
@@ -217,8 +257,8 @@ int processSimulatorCommand(char* simulatorCommand)
 				secondNumericParametre = 16;
 			
 		unsigned long instructionCount;
-		char* cpuInstruction;
-		char* disassembledInstruction;
+		char* cpuInstruction = NULL;
+		char* disassembledInstruction = NULL;
 		
 		for(instructionCount = 0; instructionCount < secondNumericParametre; instructionCount++)
 		{
