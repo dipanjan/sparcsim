@@ -1,3 +1,0 @@
- RAM = 08
- HDD = 89
-   EEPROM=78
