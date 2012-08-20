@@ -39,7 +39,7 @@ void initializeRegisters()
 	 sparcRegisters.tbr = 0;
 	 sparcRegisters.y = 0;
 	 sparcRegisters.pc = 0;
-	 sparcRegisters.npc = 0;
+	 sparcRegisters.npc = 4;
      
      // Initialize global registers
      for(count = 0; count < GLOBAL_REGISTERS; count++)
@@ -131,6 +131,7 @@ unsigned long getRegister(char* sparcRegister)
 	case 'g':
 		return *(sparcRegisters.globalRegisters + registerIndex);
 	}
+	return 0;
 }
 
 
@@ -141,6 +142,21 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
 	unsigned short registerIndex;
 	unsigned long* previousWindowPointer = getWindowPointer(-1);
 	
+	if(!strcmp(sparcRegister, "wim"))
+		sparcRegisters.wim = registerValue;
+
+	if(!strcmp(sparcRegister, "tbr"))
+		sparcRegisters.tbr = registerValue;
+
+	if(!strcmp(sparcRegister, "y"))
+		sparcRegisters.y = registerValue;
+
+	if(!strcmp(sparcRegister, "pc"))
+		sparcRegisters.pc = registerValue;
+
+	if(!strcmp(sparcRegister, "npc"))
+		sparcRegisters.npc = registerValue;
+
 	// Preceding % sign is present
 	if(strlen(sparcRegister) == 3)
 	{

@@ -10,7 +10,7 @@ long findByToken(char* token)
 		return RET_FAILURE;
 	char* buffer = (char*)malloc(20);
 	char* delimiter = " =\n";
-	int index;
+	int index = 0;
 	
 	while(buffer[index] != EOF)
 	{
@@ -27,7 +27,8 @@ long findByToken(char* token)
 }
 
 
-void main()
+int main()
 {
 	printf("%ld", findByToken("ram"));
+	return 0;
 }

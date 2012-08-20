@@ -3,7 +3,9 @@
 #include <string.h>
 #include <loader.h>
 #include <memory.h>
-#include <register.h>
+#include <decode.h>
+//#include <register.h>
+#include <execute.h>
 #include <constants.h>
 
 

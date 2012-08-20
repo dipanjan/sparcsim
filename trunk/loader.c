@@ -1,15 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <libelf/libelf.h>
-#include <libelf/gelf.h>
-#include <memory.h>
 #include <loader.h>
-#include <constants.h>
 
 
 
@@ -40,24 +29,20 @@ int initializeLoader(char *elfBinary, int isReset)
 }
 
 
-int load_sparc_elf(char *elfBinary)
+void load_sparc_elf(char *elfBinary)
 {
-
 	GElf_Ehdr elf_header;			// ELF header 
 	GElf_Shdr shdr;                 // Section Header
 	Elf* elf;               		// Elf pointer for libelf 
 	Elf_Scn* scn = NULL;            // Section Descriptor 
 	
- 	int fileDescriptor;				
-	struct stat elf_stats;	
+ 	int fileDescriptor;
 	
 	fileDescriptor = initializeLoader(elfBinary, 1);
 
 	// Check libelf version first 
 	if(elf_version(EV_CURRENT) == EV_NONE)
-	{
 		printf("WARNING: ELF library is out of date!\n");
-	}
 
 	elf = elf_begin(fileDescriptor, ELF_C_READ, NULL);	// Initialize 'elf' pointer to our file descriptor
 	gelf_getehdr(elf, &elf_header); 					// Returns NULL on error
@@ -82,9 +67,9 @@ int load_sparc_elf(char *elfBinary)
 
 void load_sparc_instructions()
 {
-	char cpuInstruction[4];
+	//char cpuInstruction[4];
 	int fileDescriptor = initializeLoader(NULL, 0);
-	Elf_Scn* scn;                   // Section Descriptor 
+	Elf_Scn* scn = NULL;            // Section Descriptor
 	Elf_Data* data;                 // Data Descriptor 
 	GElf_Shdr shdr;                 // Section Header
  	
@@ -107,10 +92,14 @@ void load_sparc_instructions()
 				char* p = (char*)data -> d_buf; 
 				while (p < (char*)data-> d_buf + data -> d_size ) 
 				{
-					cpuInstruction[0] = *p; writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++; 
-					cpuInstruction[1] = *p; writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++; 
-					cpuInstruction[2] = *p; writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++; 
-					cpuInstruction[3] = *p; writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++; 					
+					//cpuInstruction[0] = *p;
+					writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++;
+					//cpuInstruction[1] = *p;
+					writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++;
+					//cpuInstruction[2] = *p;
+					writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++;
+					//cpuInstruction[3] = *p;
+					writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++;
 					n+= 4;
 				}
 			}

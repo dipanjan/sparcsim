@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+
 
 void initializeMemory();
 int allocateMemory(unsigned long memoryAddress);

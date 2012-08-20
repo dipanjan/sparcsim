@@ -4,11 +4,11 @@
 
 
 
-#define FORCE_CAST(var, type)					 *(type*)&var
-#define REGISTER_WINDOWS         			 8
+#define FORCE_CAST(var, type)			 *(type*)&var
+#define REGISTER_WINDOWS         		 8
 #define SIZEOF_INTEGER_REGISTER  	 	 4
-#define SIZEOF_WIM_REGISTER     		 	 4
-#define REGISTER_WINDOW_WIDTH    	16
+#define SIZEOF_WIM_REGISTER     		 4
+#define REGISTER_WINDOW_WIDTH    		16
 #define GLOBAL_REGISTERS       		 	 8
 
 
@@ -26,24 +26,24 @@
 
 struct processor_status_register
 {
-       unsigned int cwp:5;
-       unsigned int et:1;
-       unsigned int ps:1;
-	   unsigned int s:1;
-       unsigned int pil:4;
-       unsigned int ef:1;
-       unsigned int ec:1;
-       unsigned int reserved:6;
+	unsigned int cwp:5;
+	unsigned int et:1;
+	unsigned int ps:1;
+	unsigned int s:1;
+	unsigned int pil:4;
+	unsigned int ef:1;
+	unsigned int ec:1;
+	unsigned int reserved:6;
 	   
-	  unsigned int c:1; 
-      unsigned int v:1;
-      unsigned int z:1;
-      unsigned int n:1;
+	unsigned int c:1;
+	unsigned int v:1;
+	unsigned int z:1;
+	unsigned int n:1;
 	  
-       //struct integer_condition_codes icc;
-	   
-       unsigned int ver:4;
-       unsigned int impl:4;
+	//struct integer_condition_codes icc;
+
+	unsigned int ver:4;
+	unsigned int impl:4;
 }__attribute__ ((__packed__));
 
 
