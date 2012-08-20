@@ -12,6 +12,23 @@
 
 
 
-int initializeLoader(char *elfBinary, int isReset);
-void load_sparc_elf(char *elfBinary);
-void load_sparc_instructions();
+#define CODE_SECTION				1
+#define DATA_SECTION				2
+#define UNINITIALIZED_DATA_SECTION	3
+
+
+
+struct loadedSections
+{
+	char sectionName[15];
+	unsigned long sectionLoadAddress;
+	short sectionType;
+	unsigned long sectionSize;
+	unsigned long instructionCount;
+	struct loadedSections* nextSection;
+};
+
+
+
+int initializeLoader(char *elfBinary);
+struct loadedSections* load_sparc_instructions(char *elfBinary);

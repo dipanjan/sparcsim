@@ -15,6 +15,7 @@ void initializeMemory()
 }
 
 
+
 int allocateMemory(unsigned long memoryAddress)
 {
 	int firstPageTableIndex = memoryAddress >> 22;
@@ -27,10 +28,7 @@ int allocateMemory(unsigned long memoryAddress)
 		secondPageTable = (char**)malloc(sizeof(char*) * 1024);
 		
 		if(secondPageTable == NULL)
-		{
-			printf("Couldn't allocate Second Page Table\n");
-			return -1;
-		}
+			return SECOND_PAGE_TABLE_ALLOCATION_ERROR;
 			
 		for(counter = 0; counter < 1024; counter++)
 			secondPageTable[counter++] = NULL;
@@ -40,13 +38,11 @@ int allocateMemory(unsigned long memoryAddress)
 		{
 			secondPageTable[secondPageTableIndex] = (char*)malloc(4 * 1024);
 			if(secondPageTable[secondPageTableIndex] == NULL)
-			{
-				printf("Couldn't allocate Page\n");
-				return -1;
-			}
+				return PAGE_ALLOCATION_ERROR;
+
 		}
 	}
-	return 0;
+	return RET_SUCCESS;
 	//printf("Alloc: Second page table: %u\n", firstPageTable[firstPageTableIndex]);
 	//printf("Alloc: Page: %u\n", secondPageTable[secondPageTableIndex]);
 	//printf("First Page Table Index: %d\n", firstPageTableIndex);
@@ -54,9 +50,16 @@ int allocateMemory(unsigned long memoryAddress)
 }
 
 
-void writeMemory(unsigned long memoryAddress, char byte)
+
+int writeMemory(unsigned long memoryAddress, char byte)
 {
-	allocateMemory(memoryAddress);
+	switch(allocateMemory(memoryAddress))
+	{
+	case SECOND_PAGE_TABLE_ALLOCATION_ERROR:
+		return SECOND_PAGE_TABLE_ALLOCATION_ERROR;
+	case PAGE_ALLOCATION_ERROR:
+		return PAGE_ALLOCATION_ERROR;
+	}
 	
 	int firstPageTableIndex = memoryAddress >> 22;
 	int secondPageTableIndex = (memoryAddress << 10) >> 22;
@@ -66,7 +69,9 @@ void writeMemory(unsigned long memoryAddress, char byte)
 	char** secondPageTable = firstPageTable[firstPageTableIndex]; //printf("Write: Second page table: %u\n", secondPageTable);
 	char* page = secondPageTable[secondPageTableIndex]; //printf("Write: Page: %u\n", page);
 	*(page + offset) = byte;
+	return RET_SUCCESS;
 }
+
 
 
 char readMemory(unsigned long memoryAddress)
@@ -89,6 +94,7 @@ char readMemory(unsigned long memoryAddress)
 }
 
 
+
 void displayQuadWord(char* cpuInstruction, int isInstruction)
 {
 	if(cpuInstruction != NULL)
@@ -107,6 +113,7 @@ void displayQuadWord(char* cpuInstruction, int isInstruction)
 }
 
 
+
 char* getQuadWordFromMemory(unsigned long memoryAddress)
 {
 	char* cpuInstruction = (char*)malloc(4);
@@ -116,6 +123,7 @@ char* getQuadWordFromMemory(unsigned long memoryAddress)
 	cpuInstruction[3] = readMemory(memoryAddress);
 	return cpuInstruction;
 }
+
 
 
 void displayMemoryArea(unsigned long memoryAddress, int count)
@@ -151,6 +159,7 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 	}
 	printf("\n");
 }
+
 
 
 /*void main()

@@ -436,7 +436,37 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				
 				switch(op3)
 				{
-					// B.25. Jump and Link Instruction
+					// B.29. Write State Register Instructions
+					case 0b110000: opcode = "wr"; break;
+					case 0b110001: opcode = "wr"; break;
+					case 0b110010: opcode = "wr"; break;
+					case 0b110011: opcode = "wr"; break;
+				}
+
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+					strcat(disassembledInstruction, getIntegerRegisterName(rd));
+					strcat(disassembledInstruction, ", ");
+					reg_or_imm = getReg_Or_Imm(rs2, i, simm13, 1);
+					strcat(disassembledInstruction, reg_or_imm);
+					strcat(disassembledInstruction, ", ");
+
+					switch(op3)
+					{
+						case 0b110000: strcat(disassembledInstruction, "%y"); break;
+						case 0b110001: strcat(disassembledInstruction, "%psr"); break;
+						case 0b110010: strcat(disassembledInstruction, "%wim"); break;
+						case 0b110011: strcat(disassembledInstruction, "%tbr"); break;
+					}
+					opcode = NULL;
+				}
+
+
+				switch(op3)
+				{
+					// B.26. Return from Trap Instruction
 					case 0b111001: opcode = "rett"; break;
 					
 					// B.32. Flush Instruction Memory
@@ -486,20 +516,24 @@ char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned
 			case 2: strcat(address, getFloatingRegisterName(rs1)); break;          // Floating point register
 			case 3: strcat(address, getCoProcessorRegisterName(rs1)); break;       // Co-Processor register
 		}
-		strcat(address, " + ");
 	}
+
 	if(i == 0) 
 	{
 		if(rs2 != 0)
+		{
+			strcat(address, " + ");
 			switch(registerTypeIdentifier)
 			{
 				case 1: strcat(address, getIntegerRegisterName(rs1)); break;       // Integer register
 				case 2: strcat(address, getFloatingRegisterName(rs1)); break;      // Floating point register
 				case 3: strcat(address, getCoProcessorRegisterName(rs1)); break;   // Co-Processor register
 			}
+		}
 	}
 	else
 	{
+		strcat(address, " + ");
 		sprintf(hexNumber, "0x%lx", simm13);
 		strcat(address, hexNumber);
 	}
