@@ -10,14 +10,46 @@ int main(int argc, char* argv[])
 	
 	initializeMemory();
     initializeRegisters();
+	
+	if(argc == 2)
+	{
+		sprintf(simulatorCommand, "load %s", argv[1]);
+		processSimulatorCommand(simulatorCommand);
+	}
+	
+	if(argc == 3)
+	{
+		if(!(strcmp(argv[1], "-d") && strcmp(argv[1], "--dis")))
+		{
+			struct loadedSections *elfSectionsPrevPtr, *elfSectionCurPtr;
+
+			elfSectionCurPtr = load_sparc_instructions(argv[2]);
+
+			printf("\n");
+			sprintf(simulatorCommand, "load %s", argv[2]);
+			processSimulatorCommand(simulatorCommand);
+			printf("\n\n");
+
+			do
+			{
+				printf("Disassembly of Section: %s\n\n", elfSectionCurPtr->sectionName);
+				sprintf(simulatorCommand, "dis %lu %lu", elfSectionCurPtr->sectionLoadAddress, elfSectionCurPtr->instructionCount);
+				processSimulatorCommand(simulatorCommand);
+				elfSectionsPrevPtr = elfSectionCurPtr;
+				free(elfSectionsPrevPtr);
+				elfSectionCurPtr = elfSectionCurPtr->nextSection;
+			}
+			while(elfSectionCurPtr != NULL);
+			printf("\n");
+		}
+		return RET_SUCCESS;
+	}
+
 
 	printf("\nSPARC v8 Simulator\n");
 	printf("******************\n");
 	printf("System Configuration: RAM = 4GB\n\n");
-	
-	if(argc == 2)
-		load_sparc_elf(argv[1]);
-	
+
 	while(1)
 	{
 		printf("\nsparcsim>");
@@ -60,16 +92,19 @@ int processSimulatorCommand(char* simulatorCommand)
 	// help
 	if(!(strcmp(command, "help") && strcmp(command, "h")))
 	{
-		printf("\n\tsparcsim  [file_name]    |  load a file into simulator memory\n");
-		printf("\t[l]oad  <file_name>      |  load a file into simulator memory\n");
-		printf("\t[m]em [addr] [count]     |  display memory at [addr] for [count] bytes\n");
-		printf("\t[w]mem <addr> <val>      |  write memory word at <addr> with value <val>\n");
-		printf("\t[r]eg [reg] [val]        |  show/set integer registers (or windows, eg 'reg w2'\n");
-		printf("\t[d]is [addr] [count]     |  disassemble [count] instructions at address [addr]\n");
-		printf("\t[h]elp                   |  display this help\n");
-		printf("\t[e]cho <string>          |  print <string> to the simulator window\n");
-		printf("\t[sh]ell <cmd>            |  execute shell command\n");
-		printf("\t[q]uit                   |  exit the simulator\n\n");
+		printf("\n\tsparcsim  [file_name]       |  load a file into simulator memory\n");
+		printf("\tsparcsim  -d [file_name]    |  disassemble SPARC ELF binary\n");
+		printf("\t[l]oad  <file_name>         |  load a file into simulator memory\n");
+		printf("\t[m]em [addr] [count]        |  display memory at [addr] for [count] bytes\n");
+		printf("\t[w]mem <addr> <val>         |  write memory word at <addr> with value <val>\n");
+		printf("\t[s]tep                      |  single step\n");
+		printf("\t[r]eg [reg] [val]           |  show/set integer registers (or windows, eg 'reg w2'\n");
+		printf("\t[d]is [addr] [count]        |  disassemble [count] instructions at address [addr]\n");
+		printf("\t[h]elp                      |  display this help\n");
+		printf("\t[e]cho <string>             |  print <string> to the simulator window\n");
+		printf("\t[sh]ell <cmd>               |  execute shell command\n");
+		printf("\t[q]uit                      |  exit the simulator\n\n");
+
 		return RET_SUCCESS;
 	}
 	
@@ -77,8 +112,39 @@ int processSimulatorCommand(char* simulatorCommand)
 	// [l]oad
 	if(!(strcmp(command, "load") && strcmp(command, "l")))
 	{
-		load_sparc_elf(firstParametre);
-		return RET_SUCCESS;
+		struct loadedSections *elfSectionsPrevPtr, *elfSectionCurPtr;
+
+		elfSectionCurPtr = load_sparc_instructions(firstParametre);
+		switch(elfSectionCurPtr ->sectionType)
+		{
+		case ELF_FILE_DOES_NOT_EXIST_ERROR:
+			printf("Couldn't open: %s\n", firstParametre);
+			return RET_FAILURE;
+		case ELF_BINARY_OUT_OF_DATE:
+			printf("Warning: ELF library is out of date\n");
+			return RET_FAILURE;
+		case ELF_POINTER_INITIALIZATION_ERROR:
+			printf("Couldn't initialize ELF pointer\n");
+			return RET_FAILURE;
+		case ELF_SECTION_LOAD_ERROR:
+			printf("Couldn't load ELF sections\n");
+			return RET_FAILURE;
+		}
+
+		do
+		{
+			printf("Loaded Section: %s, Address: 0x%lx, Size: %lu, Type: ", elfSectionCurPtr->sectionName, elfSectionCurPtr->sectionLoadAddress, elfSectionCurPtr->sectionSize);
+			switch(elfSectionCurPtr->sectionType)
+			{
+				case CODE_SECTION: printf("Code, Instructions: %lu\n", elfSectionCurPtr->instructionCount); break;
+				case DATA_SECTION: printf("Data\n"); break;
+				case UNINITIALIZED_DATA_SECTION: printf("Uninitialized Data\n"); break;
+			}
+			elfSectionsPrevPtr = elfSectionCurPtr;
+			free(elfSectionsPrevPtr);
+			elfSectionCurPtr = elfSectionCurPtr->nextSection;
+		}
+		while(elfSectionCurPtr != NULL);
 	}
 	
 	
@@ -124,10 +190,11 @@ int processSimulatorCommand(char* simulatorCommand)
 		regPC = getRegister("pc");
 		cpuInstruction = getQuadWordFromMemory(regPC);
 		disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-		executeInstruction(disassembledInstruction, regPC);
+		executeInstruction(disassembledInstruction);
 
 		free(cpuInstruction);
 		free(disassembledInstruction);
+		return RET_SUCCESS;
 	}
 
 

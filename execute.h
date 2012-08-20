@@ -12,4 +12,4 @@
 
 
 
-void executeInstruction(char* disassembledInstruction, unsigned long regPC);
+void executeInstruction(char* disassembledInstruction);
