@@ -1,11 +1,11 @@
 #include <bits.h>
 #include <string.h>
 #include <stdio.h>
+#include <misc.h>
 
 
 
 #define FORCE_CAST(var, type)			 *(type*)&var
-#define REGISTER_WINDOWS         		 8
 #define SIZEOF_INTEGER_REGISTER  	 	 4
 #define SIZEOF_WIM_REGISTER     		 4
 #define REGISTER_WINDOW_WIDTH    		16
@@ -54,6 +54,7 @@ struct registers
        unsigned long* globalRegisters;
        unsigned long* cwptr;
 	   unsigned long wim, tbr, y, pc, npc;
+	   unsigned short registerWindows;
        struct processor_status_register psr;
 };
 

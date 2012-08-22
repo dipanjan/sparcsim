@@ -10,6 +10,7 @@ int main(int argc, char* argv[])
 	
 	initializeMemory();
     initializeRegisters();
+	initializeBreakPointList();
 	
 	if(argc == 2)
 	{
@@ -94,6 +95,7 @@ int processSimulatorCommand(char* simulatorCommand)
 	{
 		printf("\n\tsparcsim  [file_name]       |  load a file into simulator memory\n");
 		printf("\tsparcsim  -d [file_name]    |  disassemble SPARC ELF binary\n");
+		printf("\t[ba]tch <file>              |  execute a batch file of SPARCSIM commands\n");
 		printf("\t[l]oad  <file_name>         |  load a file into simulator memory\n");
 		printf("\t[m]em [addr] [count]        |  display memory at [addr] for [count] bytes\n");
 		printf("\t[w]mem <addr> <val>         |  write memory word at <addr> with value <val>\n");
@@ -103,9 +105,46 @@ int processSimulatorCommand(char* simulatorCommand)
 		printf("\t[h]elp                      |  display this help\n");
 		printf("\t[e]cho <string>             |  print <string> to the simulator window\n");
 		printf("\t[sh]ell <cmd>               |  execute shell command\n");
-		printf("\t[q]uit                      |  exit the simulator\n\n");
+		printf("\t[q]uit                      |  exit the simulator\n");
 
 		return RET_SUCCESS;
+	}
+	
+	
+	// [ba]tch
+	if(!(strcmp(command, "batch") && strcmp(command, "ba")))
+	{
+		if(firstParametre == NULL)
+			return RET_FAILURE;
+		else
+		{
+			FILE* handle = fopen(firstParametre, "r");
+			if(!handle)
+			{
+				printf("\n%s does not exist", firstParametre);
+				return RET_FAILURE;
+			}
+			
+			char* buffer = (char*)malloc(150);
+			
+			while(fgets(buffer, 150, handle))
+			{
+				short bufferIndex = -1;
+				
+				// Stripping off trailing carriage return
+				while(buffer[++bufferIndex] != '\0' && buffer[++bufferIndex] != '\r');
+				buffer[bufferIndex] = '\0';
+				
+				printf("\nExecuting: %s\n", buffer);
+				if(processSimulatorCommand(buffer) == RET_FAILURE)
+					printf("Error executing command: \n");
+					
+			}		
+			
+			free(buffer);
+			fclose(handle);
+			return RET_SUCCESS;
+		}
 	}
 	
 	
@@ -145,6 +184,8 @@ int processSimulatorCommand(char* simulatorCommand)
 			elfSectionCurPtr = elfSectionCurPtr->nextSection;
 		}
 		while(elfSectionCurPtr != NULL);
+		
+		return RET_SUCCESS;
 	}
 	
 	
