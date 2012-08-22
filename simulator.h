@@ -5,6 +5,7 @@
 #include <memory.h>
 #include <decode.h>
 //#include <register.h>
+#include <breakpoint.h>
 #include <execute.h>
 #include <constants.h>
 

@@ -1,34 +1,34 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <constants.h>
+#include <misc.h>
+
+
 
 long findByToken(char* token)
 {
-	FILE* handle = fopen("config.txt", "r");
-	if(handle == NULL)
-		return RET_FAILURE;
-	char* buffer = (char*)malloc(20);
-	char* delimiter = " =\n";
-	int index = 0;
+	FILE* handle = fopen("sparcsim.conf", "r");
+	long tokenValue = RET_FAILURE;
+	char* buffer = (char*)malloc(50);
+	char* delimiter = " =\n\t";
 	
-	while(buffer[index] != EOF)
-	{
-		index = 0;
-		do
-			*(buffer + index++) = getc(handle);
-		while(buffer[index] != '\n' && buffer[index] != EOF);
+	if(!handle)
+		return FILE_DOES_NOT_EXIST_ERROR;
+	
+	while(fgets(buffer, 50, handle))
 		if(!strcasecmp(token, strtok(buffer, delimiter)))
-			atoi(strtok(NULL, delimiter));
-	}
-	
+		{
+			tokenValue = atol(strtok(NULL, delimiter));
+			break;
+		}
+
 	free(buffer);
-	return RET_FAILURE;
+	fclose(handle);
+	return tokenValue;
 }
 
 
-int main()
+
+/*int main()
 {
-	printf("%ld", findByToken("ram"));
+	printf("%ld\n", findByToken("REGISTER_WINDOWS"));
+	printf("%ld\n", findByToken("MEMEORY_BANKS"));
 	return 0;
-}
+}*/

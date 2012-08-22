@@ -21,3 +21,13 @@
 // memory.c
 #define SECOND_PAGE_TABLE_ALLOCATION_ERROR	-1
 #define PAGE_ALLOCATION_ERROR				-2
+
+
+
+// misc.c
+#define FILE_DOES_NOT_EXIST_ERROR			-2
+
+
+
+// breakpoint.c
+#define BREAKPOINT_ALLOCATION_ERROR		-1

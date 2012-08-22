@@ -8,46 +8,52 @@ struct registers sparcRegisters;
 
 void initializeRegisters()
 {
-    unsigned short count;
+	unsigned short count;
+	unsigned short registerWindows;
 	
-	sparcRegisters.registerSet = (unsigned long*)malloc(REGISTER_WINDOW_WIDTH * REGISTER_WINDOWS * SIZEOF_INTEGER_REGISTER);
-     sparcRegisters.globalRegisters = (unsigned long*)malloc(SIZEOF_INTEGER_REGISTER * GLOBAL_REGISTERS);
-     sparcRegisters.cwptr = sparcRegisters.registerSet;
-	 
-	 // Initialize psr
-     sparcRegisters.psr.cwp = 0;
-	 sparcRegisters.psr.et = 0;
-	 sparcRegisters.psr.ps = 0;
-	 sparcRegisters.psr.s = 0;
-	 sparcRegisters.psr.pil = 0;
-	 sparcRegisters.psr.ef = 0;
-	 sparcRegisters.psr.ec = 0;
-	 sparcRegisters.psr.reserved = 0;
-	 /*sparcRegisters.psr.icc.c = 0;
-	 sparcRegisters.psr.icc.v = 0;
-	 sparcRegisters.psr.icc.z = 0;
-	 sparcRegisters.psr.icc.n = 0;*/
-	 sparcRegisters.psr.c = 0;
-	 sparcRegisters.psr.v = 0;
-	 sparcRegisters.psr.z = 0;
-	 sparcRegisters.psr.n = 0;
-	 sparcRegisters.psr.ver = 0;
-	 sparcRegisters.psr.impl = 0;
-	 
-	 // Initialize wim, tbr, y, pc, npc
-	 sparcRegisters.wim = 0;
-	 sparcRegisters.tbr = 0;
-	 sparcRegisters.y = 0;
-	 sparcRegisters.pc = 0;
-	 sparcRegisters.npc = 4;
-     
-     // Initialize global registers
-     for(count = 0; count < GLOBAL_REGISTERS; count++)
-		sparcRegisters.globalRegisters[count] = 0;
+	if(sparcRegisters.registerSet != NULL)
+		free(sparcRegisters.registerSet);
+	if(sparcRegisters.globalRegisters != NULL)
+		free(sparcRegisters.globalRegisters);
+	sparcRegisters.registerWindows = findByToken("REGISTER_WINDOWS");
+	sparcRegisters.registerSet = (unsigned long*)malloc(REGISTER_WINDOW_WIDTH * sparcRegisters.registerWindows * SIZEOF_INTEGER_REGISTER);
+	sparcRegisters.globalRegisters = (unsigned long*)malloc(SIZEOF_INTEGER_REGISTER * GLOBAL_REGISTERS);
+	sparcRegisters.cwptr = sparcRegisters.registerSet;
 
-     // Initialize out, local, in registers
-     for(count = 0; count < REGISTER_WINDOW_WIDTH * REGISTER_WINDOWS; count++)
-		sparcRegisters.registerSet[count] = 0;
+	// Initialize psr
+	sparcRegisters.psr.cwp = 0;
+	sparcRegisters.psr.et = 0;
+	sparcRegisters.psr.ps = 0;
+	sparcRegisters.psr.s = 0;
+	sparcRegisters.psr.pil = 0;
+	sparcRegisters.psr.ef = 0;
+	sparcRegisters.psr.ec = 0;
+	sparcRegisters.psr.reserved = 0;
+	/*sparcRegisters.psr.icc.c = 0;
+	sparcRegisters.psr.icc.v = 0;
+	sparcRegisters.psr.icc.z = 0;
+	sparcRegisters.psr.icc.n = 0;*/
+	sparcRegisters.psr.c = 0;
+	sparcRegisters.psr.v = 0;
+	sparcRegisters.psr.z = 0;
+	sparcRegisters.psr.n = 0;
+	sparcRegisters.psr.ver = 0;
+	sparcRegisters.psr.impl = 0;
+
+	// Initialize wim, tbr, y, pc, npc
+	sparcRegisters.wim = 0;
+	sparcRegisters.tbr = 0;
+	sparcRegisters.y = 0;
+	sparcRegisters.pc = 0;
+	sparcRegisters.npc = 4;
+
+	// Initialize global registers
+	for(count = 0; count < GLOBAL_REGISTERS; count++)
+	sparcRegisters.globalRegisters[count] = 0;
+
+	// Initialize out, local, in registers
+	for(count = 0; count < REGISTER_WINDOW_WIDTH * sparcRegisters.registerWindows; count++)
+	sparcRegisters.registerSet[count] = 0;
 }
 
 
@@ -66,7 +72,7 @@ unsigned long* getWindowPointer(int direction)
    // Move window pointer forward
    if(direction == 1)
     {
-		if(sparcRegisters.psr.cwp == REGISTER_WINDOWS)
+		if(sparcRegisters.psr.cwp == sparcRegisters.registerWindows)
 			return sparcRegisters.registerSet;
 		else
 			return sparcRegisters.cwptr + REGISTER_WINDOW_WIDTH;
@@ -76,7 +82,7 @@ unsigned long* getWindowPointer(int direction)
     else
     {
 		if(sparcRegisters.psr.cwp == 0)
-			return sparcRegisters.registerSet + (REGISTER_WINDOW_WIDTH * (REGISTER_WINDOWS - 1));
+			return sparcRegisters.registerSet + (REGISTER_WINDOW_WIDTH * (sparcRegisters.registerWindows - 1));
 		else
 			return sparcRegisters.cwptr - REGISTER_WINDOW_WIDTH;
     }
