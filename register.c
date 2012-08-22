@@ -9,7 +9,6 @@ struct registers sparcRegisters;
 void initializeRegisters()
 {
 	unsigned short count;
-	unsigned short registerWindows;
 	
 	if(sparcRegisters.registerSet != NULL)
 		free(sparcRegisters.registerSet);
