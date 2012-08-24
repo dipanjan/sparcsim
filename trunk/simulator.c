@@ -12,12 +12,6 @@ int main(int argc, char* argv[])
     initializeRegisters();
 	initializeBreakPointList();
 	
-	if(argc == 2)
-	{
-		sprintf(simulatorCommand, "load %s", argv[1]);
-		processSimulatorCommand(simulatorCommand);
-	}
-	
 	if(argc == 3)
 	{
 		if(!(strcmp(argv[1], "-d") && strcmp(argv[1], "--dis")))
@@ -46,11 +40,16 @@ int main(int argc, char* argv[])
 		return RET_SUCCESS;
 	}
 
-
 	printf("\nSPARC v8 Simulator\n");
 	printf("******************\n");
 	printf("System Configuration: RAM = 4GB\n\n");
 
+	if(argc == 2)
+	{
+		sprintf(simulatorCommand, "load %s", argv[1]);
+		processSimulatorCommand(simulatorCommand);
+	}
+	
 	while(1)
 	{
 		printf("\nsparcsim>");
@@ -96,12 +95,19 @@ int processSimulatorCommand(char* simulatorCommand)
 		printf("\n\tsparcsim  [file_name]       |  load a file into simulator memory\n");
 		printf("\tsparcsim  -d [file_name]    |  disassemble SPARC ELF binary\n");
 		printf("\t[ba]tch <file>              |  execute a batch file of SPARCSIM commands\n");
+		printf("\t[re]set                     |  reset simulator \n");
 		printf("\t[l]oad  <file_name>         |  load a file into simulator memory\n");
 		printf("\t[m]em [addr] [count]        |  display memory at [addr] for [count] bytes\n");
 		printf("\t[w]mem <addr> <val>         |  write memory word at <addr> with value <val>\n");
 		printf("\t[s]tep                      |  single step\n");
+		printf("\t[br]eak <addr>              |  add a breakpoint at <addr>\n");
+		printf("\t[de]l <num>                 |  delete breakpoint <num>\n");
+		printf("\t[br]eak                     |  print all breakpoints\n");
 		printf("\t[r]eg [reg] [val]           |  show/set integer registers (or windows, eg 'reg w2'\n");
 		printf("\t[d]is [addr] [count]        |  disassemble [count] instructions at address [addr]\n");
+		printf("\t[c]ont [cnt]                |  continue execution for [cnt] instructions\n");
+		printf("\t[g]o <addr> [cnt]           |  start execution at <addr>\n");
+		printf("\t[ru]n [cnt]                 |  reset and start execution at address zero\n");
 		printf("\t[h]elp                      |  display this help\n");
 		printf("\t[e]cho <string>             |  print <string> to the simulator window\n");
 		printf("\t[sh]ell <cmd>               |  execute shell command\n");
@@ -111,6 +117,14 @@ int processSimulatorCommand(char* simulatorCommand)
 	}
 	
 	
+	// [re]set
+	if(!(strcmp(command, "reset") && strcmp(command, "re")))
+	{
+		resetSimulator();
+		return RET_SUCCESS;
+	}
+
+
 	// [ba]tch
 	if(!(strcmp(command, "batch") && strcmp(command, "ba")))
 	{
@@ -223,6 +237,7 @@ int processSimulatorCommand(char* simulatorCommand)
 	}
 	
 	
+	// [s]tep
 	if(!(strcmp(command, "step") && strcmp(command, "s")))
 	{
 		char* cpuInstruction, *disassembledInstruction;
@@ -236,6 +251,197 @@ int processSimulatorCommand(char* simulatorCommand)
 		free(cpuInstruction);
 		free(disassembledInstruction);
 		return RET_SUCCESS;
+	}
+	
+	
+	// [c]ont
+	if(!(strcmp(command, "cont") && strcmp(command, "c")))
+	{
+		char* cpuInstruction, *disassembledInstruction;
+		unsigned long regPC, nextBreakPoint;
+		unsigned short isReset;
+		int exitCode, instructionCount;
+
+		regPC = getRegister("pc");
+		nextBreakPoint = getNextBreakPoint(regPC, &isReset);
+
+		if(!firstParametre)
+		{
+			do
+			{
+				regPC = getRegister("pc");
+				if((isReset == 0) && (regPC == nextBreakPoint))
+				{
+					printf("Breaking at: 0x%lx", regPC);
+					return RET_SUCCESS;
+				}
+				cpuInstruction = getQuadWordFromMemory(regPC);
+				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+				exitCode = executeInstruction(disassembledInstruction);
+			}
+			while(exitCode == RET_SUCCESS);
+		}
+		else
+		{
+			exitCode = RET_SUCCESS;
+			for(instructionCount = 0; (instructionCount < firstNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
+			{
+				regPC = getRegister("pc");
+				if((isReset == 0) && (regPC == nextBreakPoint))
+					return RET_SUCCESS;
+				cpuInstruction = getQuadWordFromMemory(regPC);
+				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+				exitCode = executeInstruction(disassembledInstruction);
+			}
+		}
+
+		free(cpuInstruction);
+		free(disassembledInstruction);
+		return RET_SUCCESS;
+	}
+
+
+	// [g]o
+	if(!(strcmp(command, "go") && strcmp(command, "g")))
+	{
+		char* cpuInstruction, *disassembledInstruction;
+		unsigned long regPC, nextBreakPoint;
+		int exitCode, instructionCount;
+		unsigned short isReset;
+
+		regPC = getRegister("pc");
+		nextBreakPoint = getNextBreakPoint(regPC, &isReset);
+
+		if(!firstParametre)
+			return RET_FAILURE;
+
+		if(!secondParametre)
+		{
+			do
+			{
+				if((isReset == 0) && (regPC == nextBreakPoint))
+				{
+					printf("Breaking at: 0x%lx", regPC);
+					return RET_SUCCESS;
+				}
+				setRegister("pc", secondNumericParametre);
+				cpuInstruction = getQuadWordFromMemory(regPC);
+				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+				exitCode = executeInstruction(disassembledInstruction);
+			}
+			while(exitCode == RET_SUCCESS);
+		}
+		else
+		{
+			exitCode = RET_SUCCESS;
+			for(instructionCount = 0; (instructionCount < secondNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
+			{
+				setRegister("pc", secondNumericParametre);
+				cpuInstruction = getQuadWordFromMemory(regPC);
+				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+				exitCode = executeInstruction(disassembledInstruction);
+			}
+		}
+
+		free(cpuInstruction);
+		free(disassembledInstruction);
+		return RET_SUCCESS;
+	}
+
+
+	// [ru]n
+	if(!(strcmp(command, "run") && strcmp(command, "ru")))
+	{
+		char* cpuInstruction, *disassembledInstruction;
+		unsigned long regPC, nextBreakPoint;
+		int exitCode, instructionCount;
+		unsigned short isReset;
+
+		regPC = getRegister("pc");
+		nextBreakPoint = getNextBreakPoint(regPC, &isReset);
+		setRegister("pc", 0);
+		
+		if(!firstParametre)
+		{
+			do
+			{
+				if((isReset == 0) && (regPC == nextBreakPoint))
+				{
+					printf("Breaking at: 0x%lx", regPC);
+					return RET_SUCCESS;
+				}
+				cpuInstruction = getQuadWordFromMemory(regPC);
+				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+				exitCode = executeInstruction(disassembledInstruction);
+			}
+			while(exitCode == RET_SUCCESS);
+		}
+		else
+		{
+			exitCode = RET_SUCCESS;
+			for(instructionCount = 0; (instructionCount < firstNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
+			{
+				if((isReset == 0) && (regPC == nextBreakPoint))
+				{
+					printf("Breaking at: 0x%lx", regPC);
+					return RET_SUCCESS;
+				}
+				cpuInstruction = getQuadWordFromMemory(regPC);
+				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+				exitCode = executeInstruction(disassembledInstruction);
+			}
+		}
+
+		free(cpuInstruction);
+		free(disassembledInstruction);
+		return RET_SUCCESS;
+	}
+
+
+	// [br]eak
+	if(!(strcmp(command, "break") && strcmp(command, "br")))
+	{
+		if(firstParametre == NULL)
+		{
+			unsigned long breakPointAddress;
+			unsigned short isReset, count; 
+			
+			isReset = 0; 
+			count = 0;
+			printf("\n");
+			while(1)
+			{
+				breakPointAddress = getBreakPoint(&isReset);
+				if(isReset == 0)
+					printf("%d: 0x%lx\n", ++count, breakPointAddress);
+				else
+					break;
+			}
+		}
+		
+		else
+			if(addBreakPoint(firstNumericParametre) == BREAKPOINT_ALLOCATION_ERROR)
+			{
+				printf("\nERROR: Can't allocate breakpoint\n");
+				return RET_FAILURE;
+			}
+			
+		return RET_SUCCESS;
+	}
+	
+	
+	// [de]l
+	if(!(strcmp(command, "del") && strcmp(command, "de")))
+	{
+		if(firstParametre == NULL)
+			return RET_FAILURE;
+		else
+		{
+			if(deleteBreakPoint(firstNumericParametre)  == RET_FAILURE)
+				printf("\nERROR: Can't delete breakpoint");
+			else			
+				return RET_SUCCESS;
+		}
 	}
 
 
@@ -330,9 +536,9 @@ int processSimulatorCommand(char* simulatorCommand)
 			registerValue = displayRegister(regPC);
 			cpuInstruction = getQuadWordFromMemory(regPC);
 			disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-			printf("\n\t pc:  %s\t", registerValue);
+			printf("\tpc : %s\t\t", registerValue);
 			displayQuadWord(cpuInstruction, 1);
-			printf("\t%s", disassembledInstruction);			
+			printf("\t%s", disassembledInstruction);
 			free(cpuInstruction);
 			free(disassembledInstruction);
 			free(registerValue);
@@ -341,7 +547,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			registerValue = displayRegister(regPC);
 			cpuInstruction = getQuadWordFromMemory(regPC);
 			disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-			printf("\n\tnpc:  %s\t", registerValue);
+			printf("\n\tnpc: %s\t\t", registerValue);
 			displayQuadWord(cpuInstruction, 1);
 			printf("\t%s", disassembledInstruction);
 			free(cpuInstruction);

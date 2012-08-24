@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <register.h>
+#include <constants.h>
 #include <bits.h>
 
 
@@ -12,4 +13,4 @@
 
 
 
-void executeInstruction(char* disassembledInstruction);
+int executeInstruction(char* disassembledInstruction);

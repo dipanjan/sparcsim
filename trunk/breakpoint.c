@@ -18,7 +18,9 @@ int addBreakPoint(unsigned long memoryAddress)
 {
 	struct breakPoint* prevBreakPoint, *curBreakPoint, *nextBreakPoint, *newBreakPoint;
 
-	newBreakPoint = (struct breakPoint*)malloc(sizeof(struct breakPoint));;
+	newBreakPoint = (struct breakPoint*)malloc(sizeof(struct breakPoint));
+	if(newBreakPoint == NULL)
+		return BREAKPOINT_ALLOCATION_ERROR;
 	
 	// Allocate one node if the list is empty
 	if(breakPointList == NULL)
@@ -111,13 +113,13 @@ int deleteBreakPoint(unsigned short index)
 
 
 
-unsigned long showBreakPoint(unsigned short* isReset)
+unsigned long getBreakPoint(unsigned short* isReset)
 {
 	static struct breakPoint* curBreakPoint;
 	struct breakPoint* prevBreakPoint;
 	static unsigned short isInitialized = 0;
 
-	if(isInitialized == 0)
+	if(isInitialized == 0 || *isReset == 1)
 	{
 		curBreakPoint = breakPointList;
 		isInitialized = 1;
@@ -140,11 +142,24 @@ unsigned long showBreakPoint(unsigned short* isReset)
 
 
 
+unsigned long getNextBreakPoint(unsigned long regPC, unsigned short* isReset)
+{
+	unsigned long breakPointAddress;
+
+	*isReset = 1;
+	do
+		breakPointAddress = getBreakPoint(isReset);
+	while((breakPointAddress < regPC) && (*isReset == 0));
+	return breakPointAddress;
+}
+
+
+
 /*int main()
 {
 	struct breakPoint* curBreakPoint;
 	unsigned short isReset;
-	unsigned long breakpointAddress;
+	unsigned long breakPointAddress;
 
 	addBreakPoint(0x40000000);
 	addBreakPoint(0x80000000);
@@ -153,11 +168,12 @@ unsigned long showBreakPoint(unsigned short* isReset)
 	addBreakPoint(0x60000000);
 	addBreakPoint(0x70000000);
 
+	isReset = 0;
 	while(1)
 	{
-		breakpointAddress = showBreakPoint(&isReset);
+		breakPointAddress = getBreakPoint(&isReset);
 		if(isReset == 0)
-			printf("0x%lx\n", breakpointAddress);
+			printf("0x%lx\n", breakPointAddress);
 		else
 			break;
 	}
@@ -168,14 +184,56 @@ unsigned long showBreakPoint(unsigned short* isReset)
 	deleteBreakPoint(3);
 	deleteBreakPoint(4);
 
+	isReset = 0;
 	while(1)
 	{
-		breakpointAddress = showBreakPoint(&isReset);
+		breakPointAddress = getBreakPoint(&isReset);
 		if(isReset == 0)
-			printf("0x%lx\n", breakpointAddress);
+			printf("0x%lx\n", breakPointAddress);
 		else
 			break;
 	}
+	
+	printf("\n----------------\n");
+	addBreakPoint(0x50000000);
+	addBreakPoint(0x80000000);
+	addBreakPoint(0x70000000);
+	
+	isReset = 0;
+	breakPointAddress = getBreakPoint(&isReset);
+	if(isReset == 0)
+		printf("0x%lx\n", breakPointAddress);
+	breakPointAddress = getBreakPoint(&isReset);
+	if(isReset == 0)
+		printf("0x%lx\n", breakPointAddress);
+		
+	isReset = 1;
+	breakPointAddress = getBreakPoint(&isReset);
+	if(isReset == 0)
+		printf("0x%lx\n", breakPointAddress);
+
+	printf("\n----------------\n");
+	isReset = 1;
+	breakPointAddress = getNextBreakPoint(0x45000000, &isReset);
+	if(isReset == 0)
+		printf("0x%lx\n", breakPointAddress);
+	else
+		printf("No such breakpoint exixts\n");
+
+	isReset = 0;
+	breakPointAddress = getNextBreakPoint(0x55000000, &isReset);
+		if(isReset == 0)
+			printf("0x%lx\n", breakPointAddress);
+		else
+			printf("No such breakpoint exixts\n");
+
+	isReset = 0;
+	breakPointAddress = getNextBreakPoint(0x85000000, &isReset);
+	if(isReset == 0)
+		printf("0x%lx\n", breakPointAddress);
+	else
+		printf("No such breakpoint exists\n");
+
 
 	return RET_SUCCESS;
 }*/

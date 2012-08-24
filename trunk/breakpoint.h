@@ -16,4 +16,5 @@ struct breakPoint
 void initializeBreakPointList();
 int addBreakPoint(unsigned long memoryAddress);
 int deleteBreakPoint(unsigned short index);
-unsigned long showBreakPoint(unsigned short* isReset);
+unsigned long getBreakPoint(unsigned short* isReset);
+unsigned long getNextBreakPoint(unsigned long regPC, unsigned short* isReset);
