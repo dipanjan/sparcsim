@@ -61,6 +61,7 @@ struct registers
 
 
 void initializeRegisters();
+void resetSimulator();
 char* displayRegister(unsigned long registerValue);
 unsigned long* getWindowPointer(int direction);
 unsigned long getRegister(char* sparcRegister);

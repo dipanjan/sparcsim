@@ -23,7 +23,7 @@ void initializeRegisters()
 	sparcRegisters.psr.cwp = 0;
 	sparcRegisters.psr.et = 0;
 	sparcRegisters.psr.ps = 0;
-	sparcRegisters.psr.s = 0;
+	sparcRegisters.psr.s = 1;
 	sparcRegisters.psr.pil = 0;
 	sparcRegisters.psr.ef = 0;
 	sparcRegisters.psr.ec = 0;
@@ -36,7 +36,7 @@ void initializeRegisters()
 	sparcRegisters.psr.v = 0;
 	sparcRegisters.psr.z = 0;
 	sparcRegisters.psr.n = 0;
-	sparcRegisters.psr.ver = 0;
+	sparcRegisters.psr.ver = 3;
 	sparcRegisters.psr.impl = 0;
 
 	// Initialize wim, tbr, y, pc, npc
@@ -57,10 +57,23 @@ void initializeRegisters()
 
 
 
+void resetSimulator()
+{
+	sparcRegisters.psr.cwp = 0;
+	sparcRegisters.psr.c = 0;
+	sparcRegisters.psr.v = 0;
+	sparcRegisters.psr.z = 0;
+	sparcRegisters.psr.n = 0;
+	sparcRegisters.pc = 0;
+	sparcRegisters.npc = 4;
+}
+
+
+
 char* displayRegister(unsigned long registerValue)
 {
     char* hexNumber = (char*)malloc(11);
-    sprintf(hexNumber, "0x%08lx", registerValue);
+    sprintf(hexNumber, "0x%08lX", registerValue);
     return hexNumber;
 }
 
@@ -147,6 +160,9 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
 	unsigned short registerIndex;
 	unsigned long* previousWindowPointer = getWindowPointer(-1);
 	
+	if(!strcmp(sparcRegister, "psr"))
+		sparcRegisters.psr = FORCE_CAST(registerValue, struct processor_status_register);
+		
 	if(!strcmp(sparcRegister, "wim"))
 		sparcRegisters.wim = registerValue;
 
