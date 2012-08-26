@@ -26,7 +26,7 @@ struct loadedSections* load_sparc_instructions(char *elfBinary)
 	GElf_Ehdr elf_header;			// ELF header
 	GElf_Shdr shdr;                 // Section Header
 	Elf_Scn* scn = NULL;            // Section Descriptor
-	Elf_Data* data;                 // Data Descriptor
+	Elf_Data* sectionData;          // Data Descriptor
 	unsigned long instrcutionCount;
 	int fileDescriptor;
 	struct loadedSections* elfSections, *elfSectionsPrevPtr, *elfSectionCurPtr;
@@ -66,23 +66,26 @@ struct loadedSections* load_sparc_instructions(char *elfBinary)
 	while((scn = elf_nextscn(elf, scn)) != 0)
 	{
 		gelf_getshdr(scn, &shdr);
-		size_t n;
+		size_t sectionDataByteCounter;
 
-		if(shdr.sh_flags & SHF_EXECINSTR)
+		if(((shdr.sh_flags & SHF_EXECINSTR) && (shdr.sh_flags & SHF_ALLOC)) ||  // .text section
+			((shdr.sh_flags & SHF_WRITE) && (shdr.sh_flags & SHF_ALLOC)))		// .data & .bss sections
 		{
-			data = NULL; 
-			n = 0; 
+			sectionData = NULL;
+			sectionDataByteCounter = 0;
 			unsigned long sectionLoadAddress = shdr.sh_addr;
-			while (n < shdr.sh_size && (data = elf_getdata (scn, data)) != NULL) 
+			while((sectionDataByteCounter < shdr.sh_size) && ((sectionData = elf_getdata (scn, sectionData)) != NULL))
 			{
-				char* p = (char*)data -> d_buf; 
-				while (p < (char*)data-> d_buf + data -> d_size ) 
+				char* sectionDataBuffer = (char*)sectionData -> d_buf;
+				if(sectionDataBuffer == NULL)
+					break;
+				while (sectionDataBuffer < (char*)sectionData-> d_buf + sectionData -> d_size )
 				{
-					writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++;
-					writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++;
-					writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++;
-					writeMemory(sectionLoadAddress, *p); sectionLoadAddress++; p++;
-					n+= 4;
+					writeMemory(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
+					writeMemory(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
+					writeMemory(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
+					writeMemory(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
+					sectionDataByteCounter += 4;
 					instrcutionCount++;
 				}
 			}
@@ -90,10 +93,15 @@ struct loadedSections* load_sparc_instructions(char *elfBinary)
 			// Store section information
 			strcpy(elfSectionCurPtr->sectionName, elf_strptr(elf, elf_header.e_shstrndx, shdr.sh_name));
 			elfSectionCurPtr->sectionLoadAddress = shdr.sh_addr;
-			elfSectionCurPtr->sectionSize = data->d_size;
+			if(sectionData != NULL)
+				elfSectionCurPtr->sectionSize = sectionData->d_size;
+			else
+				elfSectionCurPtr->sectionSize = 0;
 			elfSectionCurPtr->instructionCount = instrcutionCount;
-			if(shdr.sh_flags & SHF_EXECINSTR)
+			if((shdr.sh_flags & SHF_EXECINSTR) && (shdr.sh_flags & SHF_ALLOC))
 				elfSectionCurPtr->sectionType = CODE_SECTION;
+			else
+				elfSectionCurPtr->sectionType = DATA_SECTION;
 			elfSectionCurPtr->nextSection = (struct loadedSections*)malloc(sizeof(struct loadedSections));
 			if(elfSectionCurPtr->nextSection == NULL)
 			{
