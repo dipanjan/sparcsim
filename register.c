@@ -108,6 +108,9 @@ unsigned long getRegister(char* sparcRegister)
 	unsigned short registerIndex;
 	unsigned long* previousWindowPointer = getWindowPointer(-1);
 	
+	if(!(strcmp(sparcRegister, "g0") && (strcmp(sparcRegister, "%g0"))))
+		return 0;
+
 	if(!strcmp(sparcRegister, "psr"))
 		return FORCE_CAST (sparcRegisters.psr, unsigned long);
 		
@@ -160,6 +163,9 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
 	unsigned short registerIndex;
 	unsigned long* previousWindowPointer = getWindowPointer(-1);
 	
+	if(!(strcmp(sparcRegister, "g0") && (strcmp(sparcRegister, "%g0"))))
+		return;
+
 	if(!strcmp(sparcRegister, "psr"))
 		sparcRegisters.psr = FORCE_CAST(registerValue, struct processor_status_register);
 		

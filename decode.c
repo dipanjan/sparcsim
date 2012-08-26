@@ -6,6 +6,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 {
 	char* disassembledInstruction = (char*)malloc(50);
 	unsigned long instructionWord, hexDigit, op, disp30, rd, a, cond, op2, imm22, disp22, op3, rs1, asi, i, rs2, simm13, opf;
+	long sign_extended_simm13;
 	short fsr = 0, fq = 0, csr = 0, cq = 0;
 	char* hexNumber = (char*)malloc(32);
 	char* opcode = NULL;
@@ -26,7 +27,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 	if(op == 1)
 	{
 		disp30 = instructionWord & 0x3FFFFFFF;
-		sprintf(hexNumber, "%lx", ((disp30 << 2) + regPC));
+		sprintf(hexNumber, "%lX", ((disp30 << 2) + regPC));
 		strcpy(disassembledInstruction, "call 0x");
 		strcat(disassembledInstruction, hexNumber);
 	}
@@ -49,7 +50,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				{
 					// SETHI
 					strcpy(disassembledInstruction, "sethi %hi(0x");
-					sprintf(hexNumber, "%lx", (imm22 << 10));
+					sprintf(hexNumber, "%lX", (imm22 << 10));
 					strcat(disassembledInstruction, hexNumber);
 					strcat(disassembledInstruction, "), ");
 					strcat(disassembledInstruction, getIntegerRegisterName(rd));
@@ -67,7 +68,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 					// B.31. Unimplemented Instruction
 					case 0: 
 					strcpy(disassembledInstruction, "unimp 0x");
-					sprintf(hexNumber, "%lx", disp22);
+					sprintf(hexNumber, "%lX", disp22);
 					strcat(disassembledInstruction, hexNumber);
 					break;
 					
@@ -151,7 +152,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				{
 					strcpy(disassembledInstruction, opcode);
 					(a == 1) ? strcat(disassembledInstruction, ",a ") : strcat(disassembledInstruction, " ");
-					sprintf(hexNumber, "0x%lx", ((disp22 << 2) + regPC));
+					sprintf(hexNumber, "0x%lX", ((disp22 << 2) + regPC));
 					strcat(disassembledInstruction, hexNumber);
 				}
 			}
@@ -164,10 +165,13 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
             op3 = (instructionWord & 0x01F80000) >> 19;
             rs1 = (instructionWord & 0x00007C000) >> 14;
             i = (instructionWord & 0x00002000) >> 13;
-            simm13 = instructionWord & 0x00001FFF;
+            simm13 = (instructionWord & 0x00001FFF);
             rs2 = instructionWord & 0x0000201F;
             asi = (instructionWord & 0x00001FE0) >> 5;
             opf = (instructionWord & 0x00003FE0) >> 5;
+            // Sign extend simm13
+            sign_extended_simm13 = (simm13 & 0x1FFF) | ((simm13 & 0x1000) ? 0xFFFFE000 : 0);
+            simm13 = sign_extended_simm13;
 			
 			// op = 3
 			if(op == 3)
@@ -534,7 +538,7 @@ char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned
 	else
 	{
 		strcat(address, " + ");
-		sprintf(hexNumber, "0x%lx", simm13);
+		sprintf(hexNumber, "0x%lX", simm13);
 		strcat(address, hexNumber);
 	}
 	
@@ -560,7 +564,7 @@ char* getReg_Or_Imm(unsigned long rs2, unsigned long i, unsigned long simm13, in
 	}
 	else
 	{
-		sprintf(hexNumber, "0x%lx", simm13);
+		sprintf(hexNumber, "0x%lX", simm13);
 		strcpy(address, hexNumber);
 	}
 	free(hexNumber);

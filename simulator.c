@@ -75,12 +75,12 @@ int processSimulatorCommand(char* simulatorCommand)
 	if(firstParametre != NULL)
 	{
 		secondParametre = strtok(NULL, delimiters);
-		firstNumericParametre = strtol(firstParametre, NULL, 0);
+		firstNumericParametre = strtoul(firstParametre, NULL, 0);
     }
 	if(secondParametre != NULL)
 	{
 		while(strtok(NULL, delimiters));
-		secondNumericParametre = strtol(secondParametre, NULL, 0);
+		secondNumericParametre = strtoul(secondParametre, NULL, 0);
     }
 	
 	
@@ -483,7 +483,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		unsigned long regPC;
 		unsigned short count;
 		sparcRegister[2] = '\0';
-		
+
 		if(firstParametre != NULL && secondParametre != NULL)
 			setRegister(firstParametre, secondNumericParametre);
 		else
