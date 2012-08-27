@@ -36,8 +36,9 @@ int main(int argc, char* argv[])
 			}
 			while(elfSectionCurPtr != NULL);
 			printf("\n");
+			return RET_SUCCESS;
 		}
-		return RET_SUCCESS;
+
 	}
 
 	printf("\nSPARC v8 Simulator\n");
@@ -50,6 +51,15 @@ int main(int argc, char* argv[])
 		processSimulatorCommand(simulatorCommand);
 	}
 	
+	if(argc == 3)
+	{
+		if(!(strcmp(argv[1], "-b") && strcmp(argv[1], "--batch")))
+		{
+			sprintf(simulatorCommand, "batch %s", argv[2]);
+			processSimulatorCommand(simulatorCommand);
+		}
+	}
+
 	while(1)
 	{
 		printf("\nsparcsim>");
