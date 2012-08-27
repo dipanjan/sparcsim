@@ -2,7 +2,7 @@
 
 
 
-int testBit(unsigned long bitStream, int position)
+int getBit(unsigned long bitStream, int position)
 {
 	int bit;
 	bit = (bitStream & (1 << position)) >> position;
@@ -44,7 +44,7 @@ char* showBits(unsigned long bitStream, int startPosition, int endPosition)
 	char* bits = (char*)malloc(endPosition - startPosition + 2);
 	int bitIndex;
 	for(bitIndex = 0; bitIndex <= endPosition; bitIndex++)
-		bits[bitIndex] = (testBit(bitStream, endPosition - bitIndex)) ? '1' : '0';
+		bits[bitIndex] = (getBit(bitStream, endPosition - bitIndex)) ? '1' : '0';
 	bits[bitIndex] = '\0';
 	return bits;
 }
@@ -53,7 +53,7 @@ char* showBits(unsigned long bitStream, int startPosition, int endPosition)
 
 /*int main()
 {
-    printf("testBit  : %d\n", testBit(0x00009FE1, 4));
+    printf("getBit  : %d\n", getBit(0x00009FE1, 4));
 	printf("showBits : %s\n", showBits(0x00009FE1, 0, 15));
 	printf("setBit   : %s\n", showBits(setBit(0x00009FE1, 3), 0, 15));
 	printf("clearBit : %s\n", showBits(clearBit(0x00009FE1, 0), 0, 15));

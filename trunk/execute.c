@@ -6,20 +6,19 @@ int executeInstruction(char* disassembledInstruction)
 {
 	char tokens[10][20];
 	char* token;
-	short count = 0, isFormatIIIOpcodeFound = -1;
-	unsigned long regPC, regnPC, regPSR;
-	long regRS1, reg_or_imm, regRD, simm13;
+	short count = 0, index, isFormatIIIOpcodeFound = -1;
+	unsigned long memoryAddress, regPC, regnPC, regPSR, regRS1, reg_or_imm, regRD;
 	
 	regnPC = getRegister("npc");
 	regPSR = getRegister("psr");
 	struct processor_status_register psr = FORCE_CAST(regPSR, struct processor_status_register);
 
 	// Don't include '%hi' in the delimiter string as it strips off 'hi' from 'sethi' instruction
-	strcpy(tokens[0], strtok(disassembledInstruction, " ,+[]()"));
+	strcpy(tokens[0], strtok(disassembledInstruction, " ,+()"));
 	do
 	{
 		// Delimiter string altered to escape %hi directive
-		token = strtok(NULL, " ,+[]%hi()");
+		token = strtok(NULL, " ,+%hi()");
 		if(token != NULL)
 			strcpy(tokens[++count], token);
 	}
@@ -202,21 +201,80 @@ int executeInstruction(char* disassembledInstruction)
 
 
 	// Format - III instruction
+	
+	// Decode Format - III operands for instruction having format: <opcode> [address], <regRD>
+	index = 1;
+	memoryAddress = getAddressValue(tokens, &index);
+	
+	
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "lduh")))
+	{
+		/*writeMemory(memoryAddress + 1, *halfWord); halfWord++;
+		writeMemory(memoryAddress, *halfWord);*/
+	}
+	
+	
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ld")))
+	{
+		char* word = getQuadWordFromMemory(memoryAddress);
+		setRegister(tokens[++index], FORCE_CAST(word, unsigned long));
+	}
+	
+	
+	if(!isFormatIIIOpcodeFound)
+	{
+		setRegister("pc", regnPC);
+		setRegister("npc",regnPC + 4);
+		return RET_SUCCESS;
+	}
+	
+	
+	// Decode Format - III operands for instruction having format: <opcode> <regRD> , [address ]
+	index = 2;
+	regRD = getRegister(tokens[1]);
+	memoryAddress = getAddressValue(tokens, &index);
+	
+	
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sth")))
+	{
+		char* halfWord = (char*)&regRD;
+		writeMemory(memoryAddress + 1, *halfWord); halfWord++;
+		writeMemory(memoryAddress, *halfWord);
+	}
+	
+	
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "st")))
+	{
+		char* word = (char*)&regRD;
+		writeMemory(memoryAddress + 3, *word); word++;
+		writeMemory(memoryAddress + 2, *word); word++;
+		writeMemory(memoryAddress + 1, *word); word++;
+		writeMemory(memoryAddress, *word);
+	}
+	
+	
+	if(!isFormatIIIOpcodeFound)
+	{
+		setRegister("pc", regnPC);
+		setRegister("npc",regnPC + 4);
+		return RET_SUCCESS;
+	}
+	
 
-	// Decode Format - III operands for instruction having
-	// follwing format: <opcode> <regRS1>, <reg_or_imm>, <regRD>
+	// Decode Format - III operands for instruction having format: <opcode> <regRS1>, <reg_or_imm>, <regRD>
 	regRS1 = getRegister(tokens[1]);
 	reg_or_imm = getReg_Or_ImmValue(tokens[2]);
 
-	if(!strcmp(tokens[0], "add"))
+	
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "add")))
 		setRegister(tokens[3], regRS1 + reg_or_imm);
 
 
-	if(!strcmp(tokens[0], "sub"))
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sub")))
 		setRegister(tokens[3], regRS1 - reg_or_imm);
 
 
-	if(!strcmp(tokens[0], "subcc"))
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "subcc")))
 	{
 		regRD = regRS1 - reg_or_imm;
 		setRegister(tokens[3], regRD);
@@ -224,11 +282,11 @@ int executeInstruction(char* disassembledInstruction)
 	}
 
 
-	if(!strcmp(tokens[0], "and"))
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "and")))
 		setRegister(tokens[3], regRS1 & reg_or_imm);
 
 
-	if(!strcmp(tokens[0], "andcc"))
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "andcc")))
 	{
 		regRD = regRS1 & reg_or_imm;
 		setRegister(tokens[3], regRD);
@@ -236,70 +294,93 @@ int executeInstruction(char* disassembledInstruction)
 	}
 
 
-	if(!strcmp(tokens[0], "or"))
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "or")))
 		setRegister(tokens[3], regRS1 | reg_or_imm);
 
 
-	if(!strcmp(tokens[0], "xnor"))
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "xnor")))
 		setRegister(tokens[3], ~(regRS1 ^ reg_or_imm));
 
 
-	if(!strcmp(tokens[0], "sll"))
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sll")))
 		setRegister(tokens[3], regRS1 << reg_or_imm);
 
 
-	if(!strcmp(tokens[0], "srl"))
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "srl")))
 		setRegister(tokens[3], regRS1 >> reg_or_imm);
 
 
-	setRegister("pc", regnPC);
-	setRegister("npc",regnPC + 4);
-	return RET_SUCCESS;
+	if(!isFormatIIIOpcodeFound)
+	{
+		setRegister("pc", regnPC);
+		setRegister("npc",regnPC + 4);
+		return RET_SUCCESS;
+	}
 
 
-	//return RET_FAILURE;
+	printf("Unimplemented in simulator: %s\n", tokens[0]);
+	return RET_FAILURE;
 }
 
 
 
-long getReg_Or_ImmValue(char* reg_or_imm)
+unsigned long getReg_Or_ImmValue(char* reg_or_imm)
 {
 	if((reg_or_imm[0] == '%') || (reg_or_imm[0] == 'g') || (reg_or_imm[0] == 'o') ||
 			(reg_or_imm[0] == 'l') || (reg_or_imm[0] == 'i'))
 		return getRegister(reg_or_imm);
 	else
 		// Note: stroul() has been used here to interpret the bit pattern
-		// as sogned long instead of unsigned long as translated bt strol()
+		// as signed long instead of unsigned long as translated by strtol()
 		return strtoul(reg_or_imm, NULL, 0);
 }
 
 
 
-void updateICC(long regRS1, long reg_or_imm, long regRD)
+unsigned long getAddressValue(char tokens[][20], unsigned short* index)
+{
+	unsigned long regRS1;
+
+	regRS1 = getRegister(tokens[++(*index)]);
+	
+	if(!strcmp(tokens[++(*index)], "]"))
+		return regRS1;
+	else
+		return (regRS1 + getReg_Or_ImmValue(tokens[*index]));
+}
+
+
+
+void updateICC(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD)
 {
 	// Disambiguation between CARRY and OVERFLOW flag:
 	// 1. http://teaching.idallen.com/dat2343/10f/notes/040_overflow.txt
 	// 2. http://www.c-jump.com/CIS77/CPU/Overflow/lecture.html
 
-	unsigned long regPSR = getRegister("psr");
+	unsigned long regPSR;
+	unsigned short signBit_regRS1, signBit_reg_or_imm, signBit_regRD, isCarry, isOverflow;
+	
 
-	// Set ICC_ZERO bit
-	if(regRD == 0)
-		regPSR = setBit(regPSR, ICC_ZERO);
-	else
-		regPSR = clearBit(regPSR, ICC_ZERO);
+	regPSR = getRegister("psr");
+	signBit_regRS1 = getBit(regRS1, SIGN_BIT);
+	signBit_reg_or_imm = getBit(reg_or_imm, SIGN_BIT);
+	signBit_regRD = getBit(regRD, SIGN_BIT);
 
-	// Set ICC_NEGATIVE bit
-	if(regRD < 0)
-		regPSR = setBit(regPSR, ICC_NEGATIVE);
-	else
-		regPSR = clearBit(regPSR, ICC_NEGATIVE);
+	// Set ICC_NEGATIVE (n) bit
+	regPSR = getBit(regRD, SIGN_BIT) ? setBit(regPSR, ICC_NEGATIVE) : clearBit(regPSR, ICC_NEGATIVE);
+	
 
-	// Set ICC_OVERFLOW bit
-	if(((regRS1 < 0) && (reg_or_imm < 0) && (regRD > 0)) || ((regRS1 > 0) && (reg_or_imm > 0) && (regRD < 0)))
-		regPSR = setBit(regPSR, ICC_OVERFLOW);
-	else
-		regPSR = clearBit(regPSR, ICC_OVERFLOW);
+	// Set ICC_ZERO (z) bit
+	regPSR = (regRD == 0) ? setBit(regPSR, ICC_ZERO) : clearBit(regPSR, ICC_ZERO);
+
+
+	// Set ICC_OVERFLOW (v) bit: Important for SIGNED arithmetic
+	regPSR = ((signBit_regRS1 && !signBit_reg_or_imm & !signBit_regRD) || (!signBit_regRS1 && signBit_reg_or_imm & signBit_regRD)) ? setBit(regPSR, ICC_OVERFLOW) : clearBit(regPSR, ICC_OVERFLOW);
+
+
+	// Set ICC_CARRY (c) bit: Important for UNSIGNED arithmetic
+	regPSR = (!signBit_regRS1 && signBit_reg_or_imm) || (signBit_regRD && (!signBit_regRS1 || signBit_reg_or_imm)) ? setBit(regPSR, ICC_CARRY) : clearBit(regPSR, ICC_CARRY);
+
 
 	// Set PSR back to modify ICC bits
 	setRegister("psr", regPSR);

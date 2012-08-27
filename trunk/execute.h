@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <register.h>
+#include <memory.h>
 #include <constants.h>
 #include <bits.h>
 
@@ -10,9 +11,11 @@
 #define ICC_OVERFLOW			21
 #define ICC_ZERO				22
 #define ICC_NEGATIVE 			23
+#define SIGN_BIT				31
 
 
 
 int executeInstruction(char* disassembledInstruction);
-long getReg_Or_ImmValue(char* reg_or_imm);
-void updateICC(long regRS1, long reg_or_imm, long regRD);
+unsigned long getAddressValue(char tokens[][20], unsigned short* index);
+unsigned long getReg_Or_ImmValue(char* reg_or_imm);
+void updateICC(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD);

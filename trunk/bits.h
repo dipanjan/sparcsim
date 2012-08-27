@@ -3,7 +3,7 @@
 
 
 
-int testBit(unsigned long bitStream, int position);
+int getBit(unsigned long bitStream, int position);
 unsigned long setBit(unsigned long bitStream, int position);
 unsigned long clearBit(unsigned long bitStream, int position);
 unsigned long toggleBit(unsigned long bitStream, int position);
