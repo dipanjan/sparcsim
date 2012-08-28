@@ -308,6 +308,38 @@ int executeInstruction(char* disassembledInstruction)
 	}
 
 	else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "umul")))
+	{
+		unsigned long long extended_regRD;
+		unsigned long regY;
+
+		regY = 0, regRD = 0;
+		extended_regRD = (unsigned long long)regRS1 * (unsigned long long)reg_or_imm;
+		regY = regY | (unsigned long)((extended_regRD & 0xFFFFFFFF00000000ULL) >> 32);
+		setRegister("y", regY);
+		extended_regRD = extended_regRD & 0x00000000FFFFFFFFULL;
+		regRD = regRD | (unsigned long)extended_regRD;
+		setRegister(tokens[3], regRD);
+	}
+
+	else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "udiv")))
+	{
+		unsigned long long dividend, quotient;
+		unsigned long regY;
+
+		regY = getRegister("y");
+		dividend = (dividend << 32) | regY;
+		dividend = (dividend << 32) | regRS1;
+		quotient = dividend / reg_or_imm;
+
+		if(quotient > ULONG_MAX)
+			setRegister(tokens[3], 0xFFFFFFFF);
+		else
+			setRegister(tokens[3], (unsigned long)quotient);
+	}
+
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "and")))
 		setRegister(tokens[3], regRS1 & reg_or_imm);
 

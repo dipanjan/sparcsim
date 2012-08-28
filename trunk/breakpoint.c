@@ -144,13 +144,13 @@ unsigned long getBreakPoint(unsigned short* isReset)
 
 unsigned long getNextBreakPoint(unsigned long regPC, unsigned short* isReset)
 {
-	unsigned long breakPointAddress;
+	unsigned long curBreakPointAddress;
 
 	*isReset = 1;
 	do
-		breakPointAddress = getBreakPoint(isReset);
-	while((breakPointAddress < regPC) && (*isReset == 0));
-	return breakPointAddress;
+		curBreakPointAddress = getBreakPoint(isReset);
+	while((curBreakPointAddress < regPC) && (*isReset == 0));
+	return curBreakPointAddress;
 }
 
 

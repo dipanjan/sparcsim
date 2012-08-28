@@ -3,6 +3,7 @@
 #include <register.h>
 #include <memory.h>
 #include <constants.h>
+#include <limits.h>
 #include <bits.h>
 
 

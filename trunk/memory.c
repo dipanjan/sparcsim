@@ -27,13 +27,13 @@ int allocateMemory(unsigned long memoryAddress)
 	{
 		secondPageTable = (char**)malloc(sizeof(char*) * 1024);
 		// printf("\n\nAllocateMemory: Allocating second page table");
-		
+
 		if(secondPageTable == NULL)
 			return SECOND_PAGE_TABLE_ALLOCATION_ERROR;
-			
+
 		for(counter = 0; counter < 1024; counter++)
 			secondPageTable[counter++] = NULL;
-			
+
 		firstPageTable[firstPageTableIndex] = secondPageTable;
 	}
 	else
@@ -41,7 +41,7 @@ int allocateMemory(unsigned long memoryAddress)
 		secondPageTable = firstPageTable[firstPageTableIndex];
 		// printf("\n\nAllocateMemory: Second page table not allocated");
 	}
-		
+
 	if(secondPageTable[secondPageTableIndex] == NULL)
 	{
 		// printf("\nAllocateMemory: Allocating required page");
@@ -51,7 +51,7 @@ int allocateMemory(unsigned long memoryAddress)
 	}
 	/*else
 		printf("\nAllocateMemory: Page not allocated");*/
-		
+
 	return RET_SUCCESS;
 	//printf("Alloc: Second page table: %u\n", firstPageTable[firstPageTableIndex]);
 	//printf("Alloc: Page: %u\n", secondPageTable[secondPageTableIndex]);
@@ -70,7 +70,7 @@ int writeMemory(unsigned long memoryAddress, char byte)
 	case PAGE_ALLOCATION_ERROR:
 		return PAGE_ALLOCATION_ERROR;
 	}
-	
+
 	unsigned long firstPageTableIndex = memoryAddress >> 22;
 	unsigned long secondPageTableIndex = (memoryAddress << 10) >> 22;
 	unsigned long offset = (memoryAddress << 20) >> 20;
@@ -141,11 +141,11 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 {
 	int counter;
 	char* quadWord;
-	
+
 	while(count > 0)
 	{
 		printf("\n\t %8lx:    ", memoryAddress);
-		
+
 		for(counter = 0; counter < 4; counter++)
 		{
 			quadWord = getQuadWordFromMemory(memoryAddress + 4 * counter);
@@ -154,9 +154,9 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 			count -= 4;
 			printf(" ");
 		}
-		
+
 		printf("    ");
-		
+
 		for(counter = 0; counter < 16; counter++)
 		{
 			char byte = readMemory(memoryAddress + counter);
@@ -165,8 +165,8 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 			else
 				printf(".");
 		}
-		
-		memoryAddress += 16;		
+
+		memoryAddress += 16;
 	}
 	printf("\n");
 }
@@ -176,17 +176,17 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 /*void main()
 {
 	initializeMemory();
-	
+
 	writeMemory(1024*4*1024-1, 'A');
 	printf("Character read: %c\n",readMemory(1024*4*1024-1));
-	
+
 	writeMemory(1024*4*1024-2, 'B');
 	printf("Character read: %c\n",readMemory(1024*4*1024-1));
 	printf("Character read: %c\n",readMemory(1024*4*1024-2));
-	
+
 	printf("Character read: %c\n",readMemory(1024*4*1024-3)); // Should be NULL
-	
+
 	//printf("Character read: %c\n",readMemory(1023*4*1024-3)); Should produce segmentation fault
-	
+
 	getMemoryArea(1024*4*1024-16, 16);
 }*/
