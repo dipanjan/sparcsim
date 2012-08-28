@@ -18,14 +18,15 @@ void initializeMemory()
 
 int allocateMemory(unsigned long memoryAddress)
 {
-	int firstPageTableIndex = memoryAddress >> 22;
-	int secondPageTableIndex = (memoryAddress << 10) >> 22;
-	int counter;
+	unsigned long firstPageTableIndex = memoryAddress >> 22;
+	unsigned long secondPageTableIndex = (memoryAddress << 10) >> 22;
+	unsigned long counter;
 	char** secondPageTable;
 
 	if(firstPageTable[firstPageTableIndex] == NULL)
 	{
 		secondPageTable = (char**)malloc(sizeof(char*) * 1024);
+		// printf("\n\nAllocateMemory: Allocating second page table");
 		
 		if(secondPageTable == NULL)
 			return SECOND_PAGE_TABLE_ALLOCATION_ERROR;
@@ -34,14 +35,23 @@ int allocateMemory(unsigned long memoryAddress)
 			secondPageTable[counter++] = NULL;
 			
 		firstPageTable[firstPageTableIndex] = secondPageTable;
-		if(secondPageTable[secondPageTableIndex] == NULL)
-		{
-			secondPageTable[secondPageTableIndex] = (char*)malloc(4 * 1024);
-			if(secondPageTable[secondPageTableIndex] == NULL)
-				return PAGE_ALLOCATION_ERROR;
-
-		}
 	}
+	else
+	{
+		secondPageTable = firstPageTable[firstPageTableIndex];
+		// printf("\n\nAllocateMemory: Second page table not allocated");
+	}
+		
+	if(secondPageTable[secondPageTableIndex] == NULL)
+	{
+		// printf("\nAllocateMemory: Allocating required page");
+		secondPageTable[secondPageTableIndex] = (char*)malloc(4 * 1024);
+		if(secondPageTable[secondPageTableIndex] == NULL)
+			return PAGE_ALLOCATION_ERROR;
+	}
+	/*else
+		printf("\nAllocateMemory: Page not allocated");*/
+		
 	return RET_SUCCESS;
 	//printf("Alloc: Second page table: %u\n", firstPageTable[firstPageTableIndex]);
 	//printf("Alloc: Page: %u\n", secondPageTable[secondPageTableIndex]);
@@ -61,13 +71,14 @@ int writeMemory(unsigned long memoryAddress, char byte)
 		return PAGE_ALLOCATION_ERROR;
 	}
 	
-	int firstPageTableIndex = memoryAddress >> 22;
-	int secondPageTableIndex = (memoryAddress << 10) >> 22;
-	int offset = (memoryAddress << 20) >> 20;
-	//printf("Write: Offset within page: %d\n", offset);
+	unsigned long firstPageTableIndex = memoryAddress >> 22;
+	unsigned long secondPageTableIndex = (memoryAddress << 10) >> 22;
+	unsigned long offset = (memoryAddress << 20) >> 20;
 
-	char** secondPageTable = firstPageTable[firstPageTableIndex]; //printf("Write: Second page table: %u\n", secondPageTable);
-	char* page = secondPageTable[secondPageTableIndex]; //printf("Write: Page: %u\n", page);
+	char** secondPageTable = firstPageTable[firstPageTableIndex];
+	char* page = secondPageTable[secondPageTableIndex];
+	// printf("\nWriteMemory: FirstPageTableIndex: %lX\nSecondPageTableIndex: %lX\nOffset: %lX", firstPageTableIndex, secondPageTableIndex, offset);
+	// printf("\nSecond page table: %lX\nPage: %lX\n", (unsigned long)secondPageTable,  (unsigned long)page);
 	*(page + offset) = byte;
 	return RET_SUCCESS;
 }
@@ -78,9 +89,9 @@ char readMemory(unsigned long memoryAddress)
 {
 	char** secondPageTable;
 	char* page;
-	int firstPageTableIndex = memoryAddress >> 22;
-	int secondPageTableIndex = (memoryAddress << 10) >> 22;
-	int offset = (memoryAddress << 20) >> 20;
+	unsigned long firstPageTableIndex = memoryAddress >> 22;
+	unsigned long secondPageTableIndex = (memoryAddress << 10) >> 22;
+	unsigned long offset = (memoryAddress << 20) >> 20;
 
 	if(firstPageTable[firstPageTableIndex] == NULL)
 		return (char)0;

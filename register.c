@@ -37,7 +37,7 @@ void initializeRegisters()
 	sparcRegisters.psr.z = 0;
 	sparcRegisters.psr.n = 0;
 	sparcRegisters.psr.ver = 3;
-	sparcRegisters.psr.impl = 0;
+	sparcRegisters.psr.impl = 0xF;
 
 	// Initialize wim, tbr, y, pc, npc
 	sparcRegisters.wim = 0;
