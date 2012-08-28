@@ -162,7 +162,7 @@ int processSimulatorCommand(char* simulatorCommand)
 				while(buffer[++bufferIndex] != '\0' && buffer[bufferIndex] != '\r' && buffer[bufferIndex] != '\n');
 				buffer[bufferIndex] = '\0';
 				
-				if(!buffer)
+				if(!buffer || !strlen(buffer))
 					continue;
 
 				printf("\nsparcsim>%s", buffer);
@@ -171,6 +171,7 @@ int processSimulatorCommand(char* simulatorCommand)
 					
 			}		
 			
+			printf("\n");
 			free(buffer);
 			fclose(handle);
 			return RET_SUCCESS;
@@ -250,7 +251,13 @@ int processSimulatorCommand(char* simulatorCommand)
 			char* bytePointer = (char*)&secondNumericParametre;
 			unsigned short count;
 			for(count = 0; count < 4; count++)
-				writeMemory(firstNumericParametre + (3 - count), *(bytePointer + count));
+			{
+				switch(writeMemory(firstNumericParametre + (3 - count), *(bytePointer + count)))
+				{
+					case SECOND_PAGE_TABLE_ALLOCATION_ERROR: printf("Error allocating second page table\n"); return RET_FAILURE;
+					case PAGE_ALLOCATION_ERROR: printf("Error allocating page\n"); return RET_FAILURE;
+				}
+			}	
 		}
 		return RET_SUCCESS;
 	}
@@ -291,7 +298,7 @@ int processSimulatorCommand(char* simulatorCommand)
 				regPC = getRegister("pc");
 				if((isReset == 0) && (regPC == nextBreakPoint))
 				{
-					printf("Breaking at: 0x%lx", regPC);
+					printf("\nBreaking at: 0x%lx", regPC);
 					return RET_SUCCESS;
 				}
 				cpuInstruction = getQuadWordFromMemory(regPC);
@@ -573,7 +580,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			free(disassembledInstruction);
 			free(registerValue);
 			
-			printf("\n");
+			printf("\n\n");
 		}
 		
 		return RET_SUCCESS;
