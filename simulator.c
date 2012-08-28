@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 
 	while(1)
 	{
-		printf("sparcsim>");
+		printf("\nsparcsim>");
 		fgets(simulatorCommand, MAX_INPUT_LENGTH, stdin);
 		//printf("Buf: %d", strlen(simulatorCommand));
 		if(processSimulatorCommand(simulatorCommand) == RET_QUIT)
@@ -77,6 +77,8 @@ int processSimulatorCommand(char* simulatorCommand)
 {
 	char* command = NULL, *firstParametre = NULL, *secondParametre = NULL, *arguments = (char*)malloc(50);
 	unsigned long firstNumericParametre = 0, secondNumericParametre = 0;
+	static unsigned long lastEncounteredBreakPoint = 0;
+	static short isLastEncounteredBreakPointValid = 0;
 	const char delimiters[] = " \n";
 	char* hexNumber = (char*)malloc(32);
 	
@@ -290,6 +292,8 @@ int processSimulatorCommand(char* simulatorCommand)
 
 		regPC = getRegister("pc");
 		nextBreakPoint = getNextBreakPoint(regPC, &isReset);
+		if((isLastEncounteredBreakPointValid == 1) && (nextBreakPoint == lastEncounteredBreakPoint))
+			nextBreakPoint = getNextBreakPoint(regPC + 1, &isReset);
 
 		if(!firstParametre)
 		{
@@ -298,7 +302,9 @@ int processSimulatorCommand(char* simulatorCommand)
 				regPC = getRegister("pc");
 				if((isReset == 0) && (regPC == nextBreakPoint))
 				{
-					printf("\nBreaking at: 0x%lx", regPC);
+					lastEncounteredBreakPoint = regPC;
+					isLastEncounteredBreakPointValid = 1;
+					printf("\nBreaking at: 0x%lX", regPC);
 					return RET_SUCCESS;
 				}
 				cpuInstruction = getQuadWordFromMemory(regPC);
@@ -314,7 +320,12 @@ int processSimulatorCommand(char* simulatorCommand)
 			{
 				regPC = getRegister("pc");
 				if((isReset == 0) && (regPC == nextBreakPoint))
+				{
+					lastEncounteredBreakPoint = regPC;
+					isLastEncounteredBreakPointValid = 1;
+					printf("\nBreaking at: 0x%lX", regPC);
 					return RET_SUCCESS;
+				}
 				cpuInstruction = getQuadWordFromMemory(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
@@ -337,6 +348,9 @@ int processSimulatorCommand(char* simulatorCommand)
 
 		regPC = getRegister("pc");
 		nextBreakPoint = getNextBreakPoint(regPC, &isReset);
+		if((isLastEncounteredBreakPointValid == 1) && (nextBreakPoint == lastEncounteredBreakPoint))
+			nextBreakPoint = getNextBreakPoint(regPC + 1, &isReset);
+
 
 		if(!firstParametre)
 			return RET_FAILURE;
@@ -347,6 +361,8 @@ int processSimulatorCommand(char* simulatorCommand)
 			{
 				if((isReset == 0) && (regPC == nextBreakPoint))
 				{
+					lastEncounteredBreakPoint = regPC;
+					isLastEncounteredBreakPointValid = 1;
 					printf("Breaking at: 0x%lx", regPC);
 					return RET_SUCCESS;
 				}
@@ -362,6 +378,13 @@ int processSimulatorCommand(char* simulatorCommand)
 			exitCode = RET_SUCCESS;
 			for(instructionCount = 0; (instructionCount < secondNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
 			{
+				if((isReset == 0) && (regPC == nextBreakPoint))
+				{
+					lastEncounteredBreakPoint = regPC;
+					isLastEncounteredBreakPointValid = 1;
+					printf("Breaking at: 0x%lx", regPC);
+					return RET_SUCCESS;
+				}
 				setRegister("pc", secondNumericParametre);
 				cpuInstruction = getQuadWordFromMemory(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
@@ -385,6 +408,8 @@ int processSimulatorCommand(char* simulatorCommand)
 
 		regPC = getRegister("pc");
 		nextBreakPoint = getNextBreakPoint(regPC, &isReset);
+		if((isLastEncounteredBreakPointValid == 1) && (nextBreakPoint == lastEncounteredBreakPoint))
+			nextBreakPoint = getNextBreakPoint(regPC + 1, &isReset);
 		setRegister("pc", 0);
 		
 		if(!firstParametre)
@@ -393,6 +418,8 @@ int processSimulatorCommand(char* simulatorCommand)
 			{
 				if((isReset == 0) && (regPC == nextBreakPoint))
 				{
+					lastEncounteredBreakPoint = regPC;
+					isLastEncounteredBreakPointValid = 1;
 					printf("Breaking at: 0x%lx", regPC);
 					return RET_SUCCESS;
 				}
@@ -409,6 +436,8 @@ int processSimulatorCommand(char* simulatorCommand)
 			{
 				if((isReset == 0) && (regPC == nextBreakPoint))
 				{
+					lastEncounteredBreakPoint = regPC;
+					isLastEncounteredBreakPointValid = 1;
 					printf("Breaking at: 0x%lx", regPC);
 					return RET_SUCCESS;
 				}
