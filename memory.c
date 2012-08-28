@@ -105,7 +105,7 @@ void displayQuadWord(char* cpuInstruction, int isInstruction)
 			char instructionByte = cpuInstruction[count];
 			hexDigit = instructionByte;
 			hexDigit = (hexDigit << 24) >> 24;
-			printf("%02x", hexDigit);
+			printf("%02X", hexDigit);
 			if(isInstruction)
 				printf(" ");
 		}

@@ -512,20 +512,20 @@ char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned
 	char* hexNumber = (char*)malloc(32);
 	address[0] = '\0';
 	
-	if(rs1 != 0)
-	{
+//	if(rs1 != 0)
+//	{
 		switch(registerTypeIdentifier)
 		{
 			case 1: strcat(address, getIntegerRegisterName(rs1)); break;           // Integer register
 			case 2: strcat(address, getFloatingRegisterName(rs1)); break;          // Floating point register
 			case 3: strcat(address, getCoProcessorRegisterName(rs1)); break;       // Co-Processor register
 		}
-	}
+//	}
 
 	if(i == 0) 
 	{
-		if(rs2 != 0)
-		{
+//		if(rs2 != 0)
+//		{
 			strcat(address, " + ");
 			switch(registerTypeIdentifier)
 			{
@@ -533,7 +533,7 @@ char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned
 				case 2: strcat(address, getFloatingRegisterName(rs1)); break;      // Floating point register
 				case 3: strcat(address, getCoProcessorRegisterName(rs1)); break;   // Co-Processor register
 			}
-		}
+//		}
 	}
 	else
 	{

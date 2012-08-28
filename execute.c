@@ -14,11 +14,11 @@ int executeInstruction(char* disassembledInstruction)
 	struct processor_status_register psr = FORCE_CAST(regPSR, struct processor_status_register);
 
 	// Don't include '%hi' in the delimiter string as it strips off 'hi' from 'sethi' instruction
-	strcpy(tokens[0], strtok(disassembledInstruction, " ,+()"));
+	strcpy(tokens[0], strtok(disassembledInstruction, " ,+[]()"));
 	do
 	{
 		// Delimiter string altered to escape %hi directive
-		token = strtok(NULL, " ,+%hi()");
+		token = strtok(NULL, " ,[]%hi()");
 		if(token != NULL)
 			strcpy(tokens[++count], token);
 	}
@@ -26,7 +26,8 @@ int executeInstruction(char* disassembledInstruction)
 
 	int i;
 	for(i = 0; i <= count; i++)
-		printf("tokens[%d]: %s (%d)\n", i, tokens[i], strlen(tokens[i]));
+		printf("\ntokens[%d]: %s", i, tokens[i]);
+	printf("\n");
 		
 	// Format - I instruction
 	if(!strcmp(tokens[0], "call"))
@@ -209,17 +210,42 @@ int executeInstruction(char* disassembledInstruction)
 	
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "lduh")))
 	{
-		/*writeMemory(memoryAddress + 1, *halfWord); halfWord++;
-		writeMemory(memoryAddress, *halfWord);*/
+		char* dataWord;
+		unsigned long word, hexDigit;
+
+		dataWord = getQuadWordFromMemory(memoryAddress);
+		word = 0;
+		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[1]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		setRegister(tokens[index], word);
+		free(dataWord);
 	}
 	
-	
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ld")))
 	{
-		char* word = getQuadWordFromMemory(memoryAddress);
-		setRegister(tokens[++index], FORCE_CAST(word, unsigned long));
+		char* dataWord;
+		unsigned long word, hexDigit;
+
+		dataWord = getQuadWordFromMemory(memoryAddress);
+		word = 0;
+		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[1]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[2]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[3]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		setRegister(tokens[index], word);
+		free(dataWord);
 	}
 	
+	else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "jmpl")))
+	{
+		setRegister(tokens[index], regPC);
+		setRegister("pc", regnPC);
+		setRegister("npc", memoryAddress);
+		return RET_SUCCESS;
+	}
+
 	
 	if(!isFormatIIIOpcodeFound)
 	{
@@ -242,7 +268,7 @@ int executeInstruction(char* disassembledInstruction)
 		writeMemory(memoryAddress, *halfWord);
 	}
 	
-	
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "st")))
 	{
 		char* word = (char*)&regRD;
@@ -269,11 +295,11 @@ int executeInstruction(char* disassembledInstruction)
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "add")))
 		setRegister(tokens[3], regRS1 + reg_or_imm);
 
-
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sub")))
 		setRegister(tokens[3], regRS1 - reg_or_imm);
 
-
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "subcc")))
 	{
 		regRD = regRS1 - reg_or_imm;
@@ -281,11 +307,11 @@ int executeInstruction(char* disassembledInstruction)
 		updateICC(regRS1, reg_or_imm, regRD);
 	}
 
-
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "and")))
 		setRegister(tokens[3], regRS1 & reg_or_imm);
 
-
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "andcc")))
 	{
 		regRD = regRS1 & reg_or_imm;
@@ -293,19 +319,19 @@ int executeInstruction(char* disassembledInstruction)
 		updateICC(regRS1, reg_or_imm, regRD);
 	}
 
-
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "or")))
 		setRegister(tokens[3], regRS1 | reg_or_imm);
 
-
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "xnor")))
 		setRegister(tokens[3], ~(regRS1 ^ reg_or_imm));
 
-
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sll")))
 		setRegister(tokens[3], regRS1 << reg_or_imm);
 
-
+	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "srl")))
 		setRegister(tokens[3], regRS1 >> reg_or_imm);
 
@@ -339,14 +365,19 @@ unsigned long getReg_Or_ImmValue(char* reg_or_imm)
 
 unsigned long getAddressValue(char tokens[][20], unsigned short* index)
 {
-	unsigned long regRS1;
+	unsigned long memoryAddress;
 
-	regRS1 = getRegister(tokens[++(*index)]);
+	if(!strcmp(tokens[*index], "["))
+		(*index)++;
 	
-	if(!strcmp(tokens[++(*index)], "]"))
-		return regRS1;
-	else
-		return (regRS1 + getReg_Or_ImmValue(tokens[*index]));
+	memoryAddress = getRegister(tokens[*index]);
+
+	if(!strcmp(tokens[++(*index)], "+"))
+		memoryAddress += getReg_Or_ImmValue(tokens[++(*index)]);
+
+	(*index) += (!strcmp(tokens[(*index) + 1], "]")) ? 2 : 1;
+
+	return memoryAddress;
 }
 
 
@@ -375,7 +406,7 @@ void updateICC(unsigned long regRS1, unsigned long reg_or_imm, unsigned long reg
 
 
 	// Set ICC_OVERFLOW (v) bit: Important for SIGNED arithmetic
-	regPSR = ((signBit_regRS1 && !signBit_reg_or_imm & !signBit_regRD) || (!signBit_regRS1 && signBit_reg_or_imm & signBit_regRD)) ? setBit(regPSR, ICC_OVERFLOW) : clearBit(regPSR, ICC_OVERFLOW);
+	regPSR = ((signBit_regRS1 && (!signBit_reg_or_imm & !signBit_regRD)) || (!signBit_regRS1 && (signBit_reg_or_imm & signBit_regRD))) ? setBit(regPSR, ICC_OVERFLOW) : clearBit(regPSR, ICC_OVERFLOW);
 
 
 	// Set ICC_CARRY (c) bit: Important for UNSIGNED arithmetic

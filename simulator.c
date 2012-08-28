@@ -62,8 +62,9 @@ int main(int argc, char* argv[])
 
 	while(1)
 	{
-		printf("\nsparcsim>");
+		printf("sparcsim>");
 		fgets(simulatorCommand, MAX_INPUT_LENGTH, stdin);
+		//printf("Buf: %d", strlen(simulatorCommand));
 		if(processSimulatorCommand(simulatorCommand) == RET_QUIT)
 			return RET_SUCCESS;
 	}
@@ -80,7 +81,9 @@ int processSimulatorCommand(char* simulatorCommand)
 	char* hexNumber = (char*)malloc(32);
 	
 	strcpy(arguments, simulatorCommand);
-	command = strtok(simulatorCommand, delimiters); 
+	command = strtok(simulatorCommand, delimiters);
+	if(!command)
+		return RET_FAILURE;
 	firstParametre = strtok(NULL, delimiters);
 	if(firstParametre != NULL)
 	{
@@ -156,12 +159,15 @@ int processSimulatorCommand(char* simulatorCommand)
 				short bufferIndex = -1;
 				
 				// Stripping off trailing carriage return
-				while(buffer[++bufferIndex] != '\0' && buffer[++bufferIndex] != '\r');
+				while(buffer[++bufferIndex] != '\0' && buffer[bufferIndex] != '\r' && buffer[bufferIndex] != '\n');
 				buffer[bufferIndex] = '\0';
 				
-				printf("\nExecuting: %s\n", buffer);
+				if(!buffer)
+					continue;
+
+				printf("\nsparcsim>%s", buffer);
 				if(processSimulatorCommand(buffer) == RET_FAILURE)
-					printf("Error executing command: \n");
+					printf("\nError executing command.");
 					
 			}		
 			
@@ -178,6 +184,8 @@ int processSimulatorCommand(char* simulatorCommand)
 		struct loadedSections *elfSectionsPrevPtr, *elfSectionCurPtr;
 
 		elfSectionCurPtr = load_sparc_instructions(firstParametre);
+		printf("\n");
+
 		switch(elfSectionCurPtr ->sectionType)
 		{
 		case ELF_FILE_DOES_NOT_EXIST_ERROR:
@@ -244,6 +252,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			for(count = 0; count < 4; count++)
 				writeMemory(firstNumericParametre + (3 - count), *(bytePointer + count));
 		}
+		return RET_SUCCESS;
 	}
 	
 	
