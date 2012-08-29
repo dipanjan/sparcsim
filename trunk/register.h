@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <misc.h>
+#include <trap.h>
+#include <constants.h>
 
 
 
@@ -66,5 +68,5 @@ char* displayRegister(unsigned long registerValue);
 unsigned long* getWindowPointer(int direction);
 unsigned long getRegister(char* sparcRegister);
 void setRegister(char* sparcRegister, unsigned long registerValue);
-void saveRegisters();
-void restoreRegisters();
+int saveRegisters();
+int restoreRegisters();
