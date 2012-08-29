@@ -2,12 +2,13 @@
 
 
 
-void handleTrap(short trapCode)
+void handleTrap(short trapCode, unsigned long regPC)
 {
+	printf("\t\t");
 	switch(trapCode)
 	{
-		case ILLEGAL_INSTRUCTION: printf("\nTrap: illegal_instruction\n"); return;
-		case WINDOWS_OVERFLOW: printf("\nTrap: window_overflow\n"); return;
-		case WINDOWS_UNDERFLOW: printf("\nTrap: window_underflow\n"); return;
+		case ILLEGAL_INSTRUCTION: printf("\n%08lX:   Trap: illegal_instruction\n", regPC); return;
+		case WINDOWS_OVERFLOW: printf("\n%08lX:   Trap: window_overflow\n", regPC); return;
+		case WINDOWS_UNDERFLOW: printf("\n%08lX:   Trap: window_underflow\n", regPC); return;
 	}
 }

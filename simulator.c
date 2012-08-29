@@ -307,7 +307,7 @@ int processSimulatorCommand(char* simulatorCommand)
 					printf("\nBreaking at: 0x%lX", regPC);
 					return RET_SUCCESS;
 				}
-				cpuInstruction = getQuadWordFromMemory(regPC);
+				cpuInstruction = getQuadWordFromMemory(regPC); printf("\nPC: %lX", regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
 			}

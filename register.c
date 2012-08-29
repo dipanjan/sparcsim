@@ -236,7 +236,7 @@ int saveRegisters()
 
 	if(getBit(regWIM, nextCWP))
 	{
-		handleTrap(WINDOWS_OVERFLOW);
+		handleTrap(WINDOWS_OVERFLOW, sparcRegisters.pc);
 		return RET_FAILURE;
 	}
 	else
@@ -270,7 +270,7 @@ int restoreRegisters()
 
 	if(getBit(regWIM, psr.cwp + 1))
 	{
-		handleTrap(WINDOWS_UNDERFLOW);
+		handleTrap(WINDOWS_UNDERFLOW, sparcRegisters.pc);
 		return RET_FAILURE;
 	}
 	else

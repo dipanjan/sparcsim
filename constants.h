@@ -1,3 +1,6 @@
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
 // Generic
 #define RET_QUIT     						 0
 #define RET_SUCCESS  						 1
@@ -31,3 +34,5 @@
 
 // breakpoint.c
 #define BREAKPOINT_ALLOCATION_ERROR		-1
+
+#endif

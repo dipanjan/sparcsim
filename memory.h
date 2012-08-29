@@ -1,3 +1,6 @@
+#ifndef MEMORY_H
+#define MEMORY_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <constants.h>
@@ -11,3 +14,5 @@ char readMemory(unsigned long memoryAddress);
 void displayQuadWord(char* cpuInstruction, int isInstruction);
 char* getQuadWordFromMemory(unsigned long memoryAddress);
 void displayMemoryArea(unsigned long memoryAddress, int count);
+
+#endif
