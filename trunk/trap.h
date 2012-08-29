@@ -1,3 +1,6 @@
+#ifndef TRAP_H
+#define TRAP_H
+
 #include <stdio.h>
 
 
@@ -8,4 +11,6 @@
 
 
 
-void handleTrap(short trapCode);
+//void handleTrap(short trapCode, unsigned long regPC);
+
+#endif

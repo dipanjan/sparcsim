@@ -11,6 +11,7 @@ int executeInstruction(char* disassembledInstruction)
 	
 	count = 0;
 	isFormatIIIOpcodeFound = -1;
+	regPC = getRegister("pc");
 	regnPC = getRegister("npc");
 	regPSR = getRegister("psr");
 	struct processor_status_register psr = FORCE_CAST(regPSR, struct processor_status_register);
@@ -19,7 +20,7 @@ int executeInstruction(char* disassembledInstruction)
 	// Strip off %hi to differentiate it from SETHI instruction
 	for(index = 0; index < strlen(disassembledInstruction) - 3; index++)
 	{
-		if(disassembledInstruction[index] == '%' && disassembledInstruction[index] == 'h' && disassembledInstruction[index] == 'i')
+		if(disassembledInstruction[index] == '%' && disassembledInstruction[index + 1] == 'h' && disassembledInstruction[index + 2] == 'i')
 		{
 			disassembledInstruction[index] = ' ';
 			disassembledInstruction[index + 1] = ' ';
@@ -36,18 +37,18 @@ int executeInstruction(char* disassembledInstruction)
 	}
 	while(token);
 
-	/*int i;
+	int i;
 	for(i = 0; i <= count; i++)
 		printf("\ntokens[%d]: %s", i, tokens[i]);
-	printf("\n");*/
+	printf("\n");
 		
 	// Format - I instruction
 	if(!strcmp(tokens[0], "call"))
 	{
 		unsigned long displacement = strtol(tokens[1], NULL, 0);
 		setRegister("pc", regnPC);
-		setRegister("%o7", displacement);
 		setRegister("npc", displacement);
+		setRegister("%o7", regPC);
 		return RET_SUCCESS;
 	}
 	
@@ -72,7 +73,7 @@ int executeInstruction(char* disassembledInstruction)
 	
 	if(!strcmp(tokens[0], "unimp"))
 	{
-		handleTrap(ILLEGAL_INSTRUCTION);
+		handleTrap(ILLEGAL_INSTRUCTION, regPC);
 		return RET_FAILURE;
 	}
 	

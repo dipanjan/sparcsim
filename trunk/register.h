@@ -1,3 +1,6 @@
+#ifndef REGISTER_H
+#define REGISTER_H
+
 #include <bits.h>
 #include <string.h>
 #include <stdio.h>
@@ -70,3 +73,5 @@ unsigned long getRegister(char* sparcRegister);
 void setRegister(char* sparcRegister, unsigned long registerValue);
 int saveRegisters();
 int restoreRegisters();
+
+#endif

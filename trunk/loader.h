@@ -1,3 +1,6 @@
+#ifndef LOADER_H
+#define LOADER_H
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -32,3 +35,5 @@ struct loadedSections
 
 int initializeLoader(char *elfBinary);
 struct loadedSections* load_sparc_instructions(char *elfBinary);
+
+#endif

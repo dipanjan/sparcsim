@@ -1,3 +1,6 @@
+#ifndef BREAKPOINTS_H
+#define BREAKPOINTS_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <constants.h>
@@ -18,3 +21,5 @@ int addBreakPoint(unsigned long memoryAddress);
 int deleteBreakPoint(unsigned short index);
 unsigned long getBreakPoint(unsigned short* isReset);
 unsigned long getNextBreakPoint(unsigned long regPC, unsigned short* isReset);
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef MISC_H
+#define MISC_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,3 +9,5 @@
 
 
 long findByToken(char* token);
+
+#endif
