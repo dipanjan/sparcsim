@@ -20,3 +20,4 @@ int executeInstruction(char* disassembledInstruction);
 unsigned long getAddressValue(char tokens[][20], unsigned short* index);
 unsigned long getReg_Or_ImmValue(char* reg_or_imm);
 void updateICC(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD);
+void handleTrap(short trapCode);

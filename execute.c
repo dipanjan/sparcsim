@@ -6,28 +6,40 @@ int executeInstruction(char* disassembledInstruction)
 {
 	char tokens[10][20];
 	char* token;
-	short count = 0, index, isFormatIIIOpcodeFound = -1;
+	short count, index, isFormatIIIOpcodeFound;
 	unsigned long memoryAddress, regPC, regnPC, regPSR, regRS1, reg_or_imm, regRD;
 	
+	count = 0;
+	isFormatIIIOpcodeFound = -1;
 	regnPC = getRegister("npc");
 	regPSR = getRegister("psr");
 	struct processor_status_register psr = FORCE_CAST(regPSR, struct processor_status_register);
 
-	// Don't include '%hi' in the delimiter string as it strips off 'hi' from 'sethi' instruction
+
+	// Strip off %hi to differentiate it from SETHI instruction
+	for(index = 0; index < strlen(disassembledInstruction) - 3; index++)
+	{
+		if(disassembledInstruction[index] == '%' && disassembledInstruction[index] == 'h' && disassembledInstruction[index] == 'i')
+		{
+			disassembledInstruction[index] = ' ';
+			disassembledInstruction[index + 1] = ' ';
+			disassembledInstruction[index + 2] = ' ';
+		}
+	}
+
 	strcpy(tokens[0], strtok(disassembledInstruction, " ,+[]()"));
 	do
 	{
-		// Delimiter string altered to escape %hi directive
-		token = strtok(NULL, " ,[]%hi()");
+		token = strtok(NULL, " ,[]%()");
 		if(token != NULL)
 			strcpy(tokens[++count], token);
 	}
 	while(token);
 
-	int i;
+	/*int i;
 	for(i = 0; i <= count; i++)
 		printf("\ntokens[%d]: %s", i, tokens[i]);
-	printf("\n");
+	printf("\n");*/
 		
 	// Format - I instruction
 	if(!strcmp(tokens[0], "call"))
@@ -60,7 +72,7 @@ int executeInstruction(char* disassembledInstruction)
 	
 	if(!strcmp(tokens[0], "unimp"))
 	{
-		printf("Program exited normally\n");
+		handleTrap(ILLEGAL_INSTRUCTION);
 		return RET_FAILURE;
 	}
 	
@@ -366,6 +378,24 @@ int executeInstruction(char* disassembledInstruction)
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "srl")))
 		setRegister(tokens[3], regRS1 >> reg_or_imm);
+
+	else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "save")))
+	{
+		if(saveRegisters() == RET_FAILURE)
+			return RET_FAILURE;
+		else
+			setRegister(tokens[3], regRS1 + reg_or_imm);
+	}
+
+	else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "restore")))
+	{
+		if(restoreRegisters() == RET_FAILURE)
+			return RET_FAILURE;
+		else
+			setRegister(tokens[3], regRS1 + reg_or_imm);
+	}
 
 
 	if(!isFormatIIIOpcodeFound)

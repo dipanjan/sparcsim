@@ -144,7 +144,7 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 
 	while(count > 0)
 	{
-		printf("\n\t %8lx:    ", memoryAddress);
+		printf("\n\t %8lX:    ", memoryAddress);
 
 		for(counter = 0; counter < 4; counter++)
 		{

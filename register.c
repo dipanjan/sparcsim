@@ -84,7 +84,7 @@ unsigned long* getWindowPointer(int direction)
    // Move window pointer forward
    if(direction == 1)
     {
-		if(sparcRegisters.psr.cwp == sparcRegisters.registerWindows)
+		if(sparcRegisters.psr.cwp == (sparcRegisters.registerWindows -1))
 			return sparcRegisters.registerSet;
 		else
 			return sparcRegisters.cwptr + REGISTER_WINDOW_WIDTH;
@@ -167,7 +167,10 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
 		return;
 
 	if(!strcmp(sparcRegister, "psr"))
+	{
 		sparcRegisters.psr = FORCE_CAST(registerValue, struct processor_status_register);
+		sparcRegisters.cwptr = sparcRegisters.registerSet + (sparcRegisters.psr.cwp - 1) * REGISTER_WINDOW_WIDTH;
+	}
 		
 	if(!strcmp(sparcRegister, "wim"))
 		sparcRegisters.wim = registerValue;
@@ -216,16 +219,67 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
 
 
 
-void saveRegisters()
+int saveRegisters()
 {
-     sparcRegisters.cwptr = getWindowPointer(-1);
-     sparcRegisters.psr.cwp--;
+	unsigned long regPSR, regWIM;
+	struct processor_status_register psr;
+	short nextCWP;
+
+	regPSR = getRegister("psr");
+	psr = FORCE_CAST(regPSR, struct processor_status_register);
+	regWIM = getRegister("wim");
+
+	if(psr.cwp == 0)
+		nextCWP = sparcRegisters.registerWindows - 1;
+	else
+		nextCWP = sparcRegisters.psr.cwp - 1;
+
+	if(getBit(regWIM, nextCWP))
+	{
+		handleTrap(WINDOWS_OVERFLOW);
+		return RET_FAILURE;
+	}
+	else
+	{
+		sparcRegisters.cwptr = getWindowPointer(-1);
+		if(sparcRegisters.psr.cwp == 0)
+		 sparcRegisters.psr.cwp = sparcRegisters.registerWindows - 1;
+		else
+		 sparcRegisters.psr.cwp--;
+		return RET_SUCCESS;
+	}
 }
 
 
 
-void restoreRegisters()
+int restoreRegisters()
 {
-     sparcRegisters.cwptr = getWindowPointer(1);
-     sparcRegisters.psr.cwp++;
+	unsigned long regPSR, regWIM;
+	struct processor_status_register psr;
+	short nextCWP;
+
+	regPSR = getRegister("psr");
+	psr = FORCE_CAST(regPSR, struct processor_status_register);
+	regWIM = getRegister("wim");
+
+	if(psr.cwp == (sparcRegisters.registerWindows - 1))
+		nextCWP = 0;
+	else
+		nextCWP = sparcRegisters.psr.cwp + 1;
+
+
+	if(getBit(regWIM, psr.cwp + 1))
+	{
+		handleTrap(WINDOWS_UNDERFLOW);
+		return RET_FAILURE;
+	}
+	else
+	{
+		sparcRegisters.cwptr = getWindowPointer(1);
+		if(sparcRegisters.psr.cwp == (sparcRegisters.registerWindows - 1))
+		 sparcRegisters.psr.cwp = 0;
+		else
+		 sparcRegisters.psr.cwp++;
+		return RET_SUCCESS;
+	}
 }

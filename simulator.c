@@ -20,10 +20,10 @@ int main(int argc, char* argv[])
 
 			elfSectionCurPtr = load_sparc_instructions(argv[2]);
 
-			printf("\n");
 			sprintf(simulatorCommand, "load %s", argv[2]);
+			printf("\n");
 			processSimulatorCommand(simulatorCommand);
-			printf("\n\n");
+			printf("\n");
 
 			do
 			{
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
 	printf("\nSPARC v8 Simulator\n");
 	printf("******************\n");
-	printf("System Configuration: RAM = 4GB\n\n");
+	printf("System Configuration: RAM = 4GB\n");
 
 	if(argc == 2)
 	{
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 	{
 		printf("\nsparcsim>");
 		fgets(simulatorCommand, MAX_INPUT_LENGTH, stdin);
-		//printf("Buf: %d", strlen(simulatorCommand));
+		printf("\n");
 		if(processSimulatorCommand(simulatorCommand) == RET_QUIT)
 			return RET_SUCCESS;
 	}
@@ -173,7 +173,6 @@ int processSimulatorCommand(char* simulatorCommand)
 					
 			}		
 			
-			printf("\n");
 			free(buffer);
 			fclose(handle);
 			return RET_SUCCESS;
@@ -219,6 +218,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			elfSectionCurPtr = elfSectionCurPtr->nextSection;
 		}
 		while(elfSectionCurPtr != NULL);
+		printf("\n");
 		
 		return RET_SUCCESS;
 	}
@@ -609,7 +609,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			free(disassembledInstruction);
 			free(registerValue);
 			
-			printf("\n\n");
+			printf("\n");
 		}
 		
 		return RET_SUCCESS;
