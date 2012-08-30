@@ -165,10 +165,8 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 			else
 				printf(".");
 		}
-
 		memoryAddress += 16;
 	}
-	printf("\n");
 }
 
 

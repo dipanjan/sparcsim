@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
 	printf("\nSPARC v8 Simulator\n");
 	printf("******************\n");
-	printf("System Configuration: RAM = 4GB\n");
+	printf("System Configuration: RAM = 4GB\n\n");
 
 	if(argc == 2)
 	{
@@ -56,15 +56,15 @@ int main(int argc, char* argv[])
 		if(!(strcmp(argv[1], "-b") && strcmp(argv[1], "--batch")))
 		{
 			sprintf(simulatorCommand, "batch %s", argv[2]);
-			processSimulatorCommand(simulatorCommand);
+			if(processSimulatorCommand(simulatorCommand) == RET_QUIT)
+				return RET_SUCCESS;
 		}
 	}
 
 	while(1)
 	{
-		printf("\nsparcsim>");
+		printf("sparcsim>");
 		fgets(simulatorCommand, MAX_INPUT_LENGTH, stdin);
-		printf("\n");
 		if(processSimulatorCommand(simulatorCommand) == RET_QUIT)
 			return RET_SUCCESS;
 	}
@@ -109,6 +109,7 @@ int processSimulatorCommand(char* simulatorCommand)
 	{
 		printf("\n\tsparcsim  [file_name]       |  load a file into simulator memory\n");
 		printf("\tsparcsim  -d [file_name]    |  disassemble SPARC ELF binary\n");
+		printf("\tsparcsim  -t [file_name]    |  execute a batch file of SPARCSIM commands\n");
 		printf("\t[ba]tch <file>              |  execute a batch file of SPARCSIM commands\n");
 		printf("\t[re]set                     |  reset simulator \n");
 		printf("\t[l]oad  <file_name>         |  load a file into simulator memory\n");
@@ -126,7 +127,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		printf("\t[h]elp                      |  display this help\n");
 		printf("\t[e]cho <string>             |  print <string> to the simulator window\n");
 		printf("\t[sh]ell <cmd>               |  execute shell command\n");
-		printf("\t[q]uit                      |  exit the simulator\n");
+		printf("\t[q]uit                      |  exit the simulator\n\n");
 
 		return RET_SUCCESS;
 	}
@@ -150,7 +151,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			FILE* handle = fopen(firstParametre, "r");
 			if(!handle)
 			{
-				printf("\n%s does not exist", firstParametre);
+				printf("Batch file: %s does not exist\n", firstParametre);
 				return RET_FAILURE;
 			}
 			
@@ -167,10 +168,12 @@ int processSimulatorCommand(char* simulatorCommand)
 				if(!buffer || !strlen(buffer))
 					continue;
 
-				printf("\nsparcsim>%s", buffer);
-				if(processSimulatorCommand(buffer) == RET_FAILURE)
-					printf("\nError executing command.");
-					
+				printf("sparcsim>%s\n", buffer);
+				switch(processSimulatorCommand(buffer))
+				{
+					case RET_FAILURE: printf("Error executing command\n"); return RET_FAILURE;
+					case RET_QUIT: return RET_QUIT;
+				}					
 			}		
 			
 			free(buffer);
@@ -230,16 +233,14 @@ int processSimulatorCommand(char* simulatorCommand)
 		if(firstParametre == NULL && secondParametre == NULL)
 			return RET_FAILURE;
 		else
+		{
 			if(secondParametre == NULL)
-			{
 				displayMemoryArea(firstNumericParametre, 64);
-				return RET_SUCCESS;
-			}
 			else
-			{
 				displayMemoryArea(firstNumericParametre, secondNumericParametre);
-				return RET_SUCCESS;
-			}
+				
+			printf("\n\n");
+		}
 	}
 	
 	
@@ -274,6 +275,9 @@ int processSimulatorCommand(char* simulatorCommand)
 		regPC = getRegister("pc");
 		cpuInstruction = getQuadWordFromMemory(regPC);
 		disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+		printf("\t%08lX:\t", regPC);
+		displayQuadWord(cpuInstruction, 1);
+		printf("\t%s\n",disassembledInstruction);
 		executeInstruction(disassembledInstruction);
 
 		free(cpuInstruction);
@@ -304,10 +308,10 @@ int processSimulatorCommand(char* simulatorCommand)
 				{
 					lastEncounteredBreakPoint = regPC;
 					isLastEncounteredBreakPointValid = 1;
-					printf("\nBreaking at: 0x%lX", regPC);
+					printf("Breaking at: 0x%lX\n", regPC);
 					return RET_SUCCESS;
 				}
-				cpuInstruction = getQuadWordFromMemory(regPC); printf("\nPC: %lX", regPC);
+				cpuInstruction = getQuadWordFromMemory(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
 			}
@@ -323,7 +327,7 @@ int processSimulatorCommand(char* simulatorCommand)
 				{
 					lastEncounteredBreakPoint = regPC;
 					isLastEncounteredBreakPointValid = 1;
-					printf("\nBreaking at: 0x%lX", regPC);
+					printf("Breaking at: 0x%lX\n", regPC);
 					return RET_SUCCESS;
 				}
 				cpuInstruction = getQuadWordFromMemory(regPC);
@@ -363,7 +367,7 @@ int processSimulatorCommand(char* simulatorCommand)
 				{
 					lastEncounteredBreakPoint = regPC;
 					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lx", regPC);
+					printf("Breaking at: 0x%lX\n", regPC);
 					return RET_SUCCESS;
 				}
 				setRegister("pc", secondNumericParametre);
@@ -382,7 +386,7 @@ int processSimulatorCommand(char* simulatorCommand)
 				{
 					lastEncounteredBreakPoint = regPC;
 					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lx", regPC);
+					printf("Breaking at: 0x%lX\n", regPC);
 					return RET_SUCCESS;
 				}
 				setRegister("pc", secondNumericParametre);
@@ -420,7 +424,7 @@ int processSimulatorCommand(char* simulatorCommand)
 				{
 					lastEncounteredBreakPoint = regPC;
 					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lx", regPC);
+					printf("Breaking at: 0x%lX\n", regPC);
 					return RET_SUCCESS;
 				}
 				cpuInstruction = getQuadWordFromMemory(regPC);
@@ -438,7 +442,7 @@ int processSimulatorCommand(char* simulatorCommand)
 				{
 					lastEncounteredBreakPoint = regPC;
 					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lx", regPC);
+					printf("Breaking at: 0x%lX\n", regPC);
 					return RET_SUCCESS;
 				}
 				cpuInstruction = getQuadWordFromMemory(regPC);
@@ -472,6 +476,7 @@ int processSimulatorCommand(char* simulatorCommand)
 				else
 					break;
 			}
+			printf("\n");
 		}
 		
 		else
@@ -524,6 +529,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			while(*arguments++ != ' ' );
 			printf("\n");
 			system(arguments);
+			printf("\n");
 			free(argumentBase);
 			return RET_SUCCESS;
 		}
@@ -609,7 +615,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			free(disassembledInstruction);
 			free(registerValue);
 			
-			printf("\n");
+			printf("\n\n");
 		}
 		
 		return RET_SUCCESS;
@@ -643,7 +649,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		
 		free(cpuInstruction);
 		free(disassembledInstruction);
-		printf("\n");
+		printf("\n\n");
 		return RET_SUCCESS;
 	}
 	
