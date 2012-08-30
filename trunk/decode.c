@@ -6,7 +6,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 {
 	char* disassembledInstruction = (char*)malloc(50);
 	unsigned long instructionWord, hexDigit, op, disp30, rd, a, cond, op2, imm22, disp22, op3, rs1, asi, i, rs2, simm13, opf;
-	long sign_extended_simm13;
+	long sign_extended_simm13, sign_extended_disp22;
 	short fsr = 0, fq = 0, csr = 0, cq = 0;
 	char* hexNumber = (char*)malloc(32);
 	char* opcode = NULL;
@@ -62,6 +62,9 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				a = (instructionWord & 0x20000000) >> 29;
 				cond = (instructionWord & 0x1E000000) >> 25;
 				disp22 = instructionWord & 0x003FFFFF;
+				// Sign extend disp22
+				sign_extended_disp22 = (disp22 & 0x3FFFFF) | ((disp22 & 0x20000) ? 0xFFC00000 : 0);
+				disp22 = sign_extended_disp22;
 				
 				switch(op2)
 				{
@@ -451,7 +454,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				{
 					strcpy(disassembledInstruction, opcode);
 					strcat(disassembledInstruction, " ");
-					strcat(disassembledInstruction, getIntegerRegisterName(rd));
+					strcat(disassembledInstruction, getIntegerRegisterName(rs1));
 					strcat(disassembledInstruction, ", ");
 					reg_or_imm = getReg_Or_Imm(rs2, i, simm13, 1);
 					strcat(disassembledInstruction, reg_or_imm);

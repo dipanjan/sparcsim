@@ -37,10 +37,10 @@ int executeInstruction(char* disassembledInstruction)
 	}
 	while(token);
 
-	int i;
+	/*int i;
 	for(i = 0; i <= count; i++)
 		printf("\ntokens[%d]: %s", i, tokens[i]);
-	printf("\n");
+	printf("\n");*/
 		
 	// Format - I instruction
 	if(!strcmp(tokens[0], "call"))
@@ -131,46 +131,46 @@ int executeInstruction(char* disassembledInstruction)
 		strcmp(tokens[0], "bvc") &&
 		strcmp(tokens[0], "bnvs")))
 	{
-		short condition;
+		unsigned short condition;
 
 		if(!strcmp(tokens[0], "bne"))
-			condition = ~psr.z;
+			condition = !psr.z;
 		else
 			if(!strcmp(tokens[0], "be"))
 				condition = psr.z;
 			else
 				if(!strcmp(tokens[0], "bg"))
-					condition = ~(psr.z | (psr.n ^ psr.v));
+					condition = !(psr.z || (psr.n ^ psr.v));
 				else
 					if(!strcmp(tokens[0], "ble"))
-						condition = psr.z | (psr.n ^ psr.v);
+						condition = psr.z || (psr.n ^ psr.v);
 					else
 						if(!strcmp(tokens[0], "bge"))
-							condition = ~(psr.n ^ psr.v);
+							condition = !(psr.n ^ psr.v);
 						else
 							if(!strcmp(tokens[0], "bl"))
 								condition = psr.n ^ psr.v;
 							else
 								if(!strcmp(tokens[0], "bgu"))
-									condition = ~(psr.c | psr.z);
+									condition = !(psr.c || psr.z);
 								else
 									if(!strcmp(tokens[0], "bleu"))
-										condition = psr.c | psr.z;
+										condition = psr.c || psr.z;
 									else
 										if(!strcmp(tokens[0], "bcc"))
-											condition = ~psr.c;
+											condition = !psr.c;
 										else
 											if(!strcmp(tokens[0], "bcs"))
 												condition = psr.c;
 											else
 												if(!strcmp(tokens[0], "bpos"))
-													condition = ~psr.n;
+													condition = !psr.n;
 												else
 													if(!strcmp(tokens[0], "bneg"))
 														condition = psr.n;
 													else
 														if(!strcmp(tokens[0], "bvc"))
-															condition = ~psr.v;
+															condition = !psr.v;
 														else
 															if(!strcmp(tokens[0], "bvs"))
 																condition = psr.v;
@@ -182,7 +182,7 @@ int executeInstruction(char* disassembledInstruction)
 			{
 				// Branch taken
 				setRegister("pc", regnPC);
-				regnPC = strtol(tokens[2], NULL, 0);
+				regnPC = strtoul(tokens[2], NULL, 0);
 				setRegister("npc", regnPC);
 			}
 			else
@@ -199,7 +199,7 @@ int executeInstruction(char* disassembledInstruction)
 			{
 				// Branch taken
 				setRegister("pc", regnPC);
-				regnPC = strtol(tokens[1], NULL, 0);
+				regnPC = strtoul(tokens[1], NULL, 0);
 				setRegister("npc", regnPC);
 			}
 			else
@@ -397,6 +397,10 @@ int executeInstruction(char* disassembledInstruction)
 		else
 			setRegister(tokens[3], regRS1 + reg_or_imm);
 	}
+	
+	else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "wr")))
+		setRegister(tokens[3], regRS1 ^ reg_or_imm);
 
 
 	if(!isFormatIIIOpcodeFound)
@@ -469,7 +473,7 @@ void updateICC(unsigned long regRS1, unsigned long reg_or_imm, unsigned long reg
 
 
 	// Set ICC_OVERFLOW (v) bit: Important for SIGNED arithmetic
-	regPSR = ((signBit_regRS1 && (!signBit_reg_or_imm & !signBit_regRD)) || (!signBit_regRS1 && (signBit_reg_or_imm & signBit_regRD))) ? setBit(regPSR, ICC_OVERFLOW) : clearBit(regPSR, ICC_OVERFLOW);
+	regPSR = ((signBit_regRS1 && (!signBit_reg_or_imm && !signBit_regRD)) || (!signBit_regRS1 && (signBit_reg_or_imm && signBit_regRD))) ? setBit(regPSR, ICC_OVERFLOW) : clearBit(regPSR, ICC_OVERFLOW);
 
 
 	// Set ICC_CARRY (c) bit: Important for UNSIGNED arithmetic
