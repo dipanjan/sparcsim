@@ -160,7 +160,7 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 		for(counter = 0; counter < 16; counter++)
 		{
 			char byte = readMemory(memoryAddress + counter);
-			if(((byte >= 65) && (byte <= 90)) || ((byte >= 97) && (byte <= 122)))
+			if((byte >= 33) && (byte <= 126))
 				printf("%c", byte);
 			else
 				printf(".");

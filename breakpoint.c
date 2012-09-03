@@ -3,7 +3,7 @@
 
 
 struct breakPoint* breakPointList = NULL;
-
+short breakPointSerial = 0;
 
 
 void initializeBreakPointList()
@@ -19,56 +19,40 @@ int addBreakPoint(unsigned long memoryAddress)
 	struct breakPoint* prevBreakPoint, *curBreakPoint, *nextBreakPoint, *newBreakPoint;
 
 	newBreakPoint = (struct breakPoint*)malloc(sizeof(struct breakPoint));
-	if(newBreakPoint == NULL)
+	if(!newBreakPoint)
 		return BREAKPOINT_ALLOCATION_ERROR;
 	
 	// Allocate one node if the list is empty
-	if(breakPointList == NULL)
+	if(!breakPointList)
 	{
 		breakPointList = newBreakPoint;
 		curBreakPoint = breakPointList;
-		curBreakPoint->nextBreakPoint = NULL;
 	}
 	else
 	{
 		curBreakPoint = breakPointList;
 		prevBreakPoint = breakPointList;
 
-		while(curBreakPoint != NULL && (curBreakPoint->memoryAddress <= memoryAddress))
-			// Duplicate breakpoint
-			if(curBreakPoint->memoryAddress == memoryAddress)
-				return RET_SUCCESS;
-			else
-			{
-				prevBreakPoint = curBreakPoint;
-				curBreakPoint = curBreakPoint->nextBreakPoint;
-			}
-	
-		if(curBreakPoint == NULL)
+		while(curBreakPoint && (prevBreakPoint->memoryAddress != memoryAddress))
 		{
-			// We have arrived at the end of the list
+			prevBreakPoint = curBreakPoint;
+			curBreakPoint = curBreakPoint->nextBreakPoint;
+		}
+	
+		if(prevBreakPoint->memoryAddress == memoryAddress)
+			return RET_SUCCESS;
+		else
+		{
+			// We are at the end of the list
 			prevBreakPoint->nextBreakPoint = newBreakPoint;
 			curBreakPoint = prevBreakPoint->nextBreakPoint;
-			curBreakPoint->nextBreakPoint = NULL;
 		}
-		else
-			if(breakPointList == curBreakPoint)
-			{
-				// We are at the beginning of the list
-				newBreakPoint->nextBreakPoint = breakPointList;
-				breakPointList = newBreakPoint;
-				curBreakPoint= breakPointList;
-			}
-			else
-			{
-				// We are at the middle of the list
-				newBreakPoint->nextBreakPoint = curBreakPoint;
-				prevBreakPoint->nextBreakPoint = newBreakPoint;
-				curBreakPoint = newBreakPoint;
-			}
 	}
 
+	breakPointSerial++;
 	curBreakPoint->memoryAddress = memoryAddress;
+	curBreakPoint->breakPointSerial = breakPointSerial;
+	curBreakPoint->nextBreakPoint = NULL;
 
 	return RET_SUCCESS;
 }
@@ -79,47 +63,50 @@ int deleteBreakPoint(unsigned short index)
 {
 	struct breakPoint* prevBreakPoint, *curBreakPoint, *nextBreakPoint;
 
-	if((index == 1) && (breakPointList != NULL))
+	if(breakPointList)
 	{
-		// Delete first breakpoint
-		nextBreakPoint = breakPointList->nextBreakPoint;
-		free(breakPointList);
-		breakPointList = nextBreakPoint;
-		return RET_SUCCESS;
-	}
+		if(breakPointList->breakPointSerial == index)
+		{
+			// Delete first breakpoint
+			nextBreakPoint = breakPointList->nextBreakPoint;
+			free(breakPointList);
+			breakPointList = nextBreakPoint;
+			return RET_SUCCESS;
+		}
+		else
+		{
+			// Delete non-first breakpoint
+			unsigned short position;
 
-	else
-	{
-		// Delete non-first breakpoint
-		unsigned short position;
-
-		curBreakPoint = breakPointList;
-		for(position = 1; position < index; position++)
-			if(curBreakPoint->nextBreakPoint == NULL)
-				return RET_FAILURE;
-			else
+			curBreakPoint = breakPointList;
+			while((curBreakPoint->breakPointSerial != index) && curBreakPoint->nextBreakPoint)
 			{
 				prevBreakPoint = curBreakPoint;
 				curBreakPoint = curBreakPoint->nextBreakPoint;
 			}
 
-		nextBreakPoint = curBreakPoint->nextBreakPoint;
-		free(curBreakPoint);
-		prevBreakPoint->nextBreakPoint = nextBreakPoint;
-		return RET_SUCCESS;
+			if(curBreakPoint->breakPointSerial ==index)
+			{
+				nextBreakPoint = curBreakPoint->nextBreakPoint;
+				free(curBreakPoint);
+				prevBreakPoint->nextBreakPoint = nextBreakPoint;
+				return RET_SUCCESS;
+			}
+		}
 	}
+
 	return RET_FAILURE;
 }
 
 
 
-unsigned long getBreakPoint(unsigned short* isReset)
+struct breakPoint* getBreakPoint(unsigned short isReset)
 {
 	static struct breakPoint* curBreakPoint;
 	struct breakPoint* prevBreakPoint;
 	static unsigned short isInitialized = 0;
 
-	if(isInitialized == 0 || *isReset == 1)
+	if(isInitialized == 0 || isReset == 1)
 	{
 		curBreakPoint = breakPointList;
 		isInitialized = 1;
@@ -129,28 +116,32 @@ unsigned long getBreakPoint(unsigned short* isReset)
 	{
 		prevBreakPoint = curBreakPoint;
 		curBreakPoint = curBreakPoint->nextBreakPoint;
-		*isReset = 0;
-		return prevBreakPoint->memoryAddress;
+		return prevBreakPoint;
 	}
 	else
 	{
 		isInitialized = 0;
-		*isReset = 1;
-		return RET_SUCCESS;
+		return NULL;
 	}
 }
 
 
-
-unsigned long getNextBreakPoint(unsigned long regPC, unsigned short* isReset)
+int isBreakPoint(unsigned long regPC)
 {
-	unsigned long curBreakPointAddress;
+	struct breakPoint* prevBreakPoint, *curBreakPoint;
 
-	*isReset = 1;
-	do
-		curBreakPointAddress = getBreakPoint(isReset);
-	while((curBreakPointAddress < regPC) && (*isReset == 0));
-	return curBreakPointAddress;
+	prevBreakPoint = breakPointList;
+	curBreakPoint = breakPointList;
+
+	while(curBreakPoint)
+	{
+		if(prevBreakPoint->memoryAddress == regPC)
+			return 1;
+		prevBreakPoint = curBreakPoint;
+		curBreakPoint = curBreakPoint->nextBreakPoint;
+	}
+
+	return 0;
 }
 
 
