@@ -240,6 +240,7 @@ int processSimulatorCommand(char* simulatorCommand)
 				displayMemoryArea(firstNumericParametre, secondNumericParametre);
 				
 			printf("\n\n");
+			return RET_SUCCESS;
 		}
 	}
 	
@@ -290,30 +291,33 @@ int processSimulatorCommand(char* simulatorCommand)
 	if(!(strcmp(command, "cont") && strcmp(command, "c")))
 	{
 		char* cpuInstruction, *disassembledInstruction;
-		unsigned long regPC, nextBreakPoint;
-		unsigned short isReset;
+		unsigned long regPC;
 		int exitCode, instructionCount;
 
-		regPC = getRegister("pc");
-		nextBreakPoint = getNextBreakPoint(regPC, &isReset);
-		if((isLastEncounteredBreakPointValid == 1) && (nextBreakPoint == lastEncounteredBreakPoint))
-			nextBreakPoint = getNextBreakPoint(regPC + 1, &isReset);
-
+		instructionCount = 0;
 		if(!firstParametre)
 		{
 			do
 			{
 				regPC = getRegister("pc");
-				if((isReset == 0) && (regPC == nextBreakPoint))
+				if(isBreakPoint(regPC))
 				{
-					lastEncounteredBreakPoint = regPC;
-					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lX\n", regPC);
-					return RET_SUCCESS;
+					if((regPC == lastEncounteredBreakPoint) && isLastEncounteredBreakPointValid && !instructionCount)
+						isLastEncounteredBreakPointValid = 0;
+					else
+					{
+						lastEncounteredBreakPoint = regPC;
+						isLastEncounteredBreakPointValid = 1;
+						printf("Breaking at: 0x%lX after executing %d instructions\n", regPC, instructionCount);
+						return RET_SUCCESS;
+					}
 				}
 				cpuInstruction = getQuadWordFromMemory(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
+				free(cpuInstruction);
+				free(disassembledInstruction);
+				instructionCount++;
 			}
 			while(exitCode == RET_SUCCESS);
 		}
@@ -323,21 +327,27 @@ int processSimulatorCommand(char* simulatorCommand)
 			for(instructionCount = 0; (instructionCount < firstNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
 			{
 				regPC = getRegister("pc");
-				if((isReset == 0) && (regPC == nextBreakPoint))
+				if(isBreakPoint(regPC))
 				{
-					lastEncounteredBreakPoint = regPC;
-					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lX\n", regPC);
-					return RET_SUCCESS;
+					if((regPC == lastEncounteredBreakPoint) && isLastEncounteredBreakPointValid && !instructionCount)
+						isLastEncounteredBreakPointValid = 0;
+					else
+					{
+						lastEncounteredBreakPoint = regPC;
+						isLastEncounteredBreakPointValid = 1;
+						printf("Breaking at: 0x%lX after executing %d instructions\n", regPC, instructionCount);
+						return RET_SUCCESS;
+					}
 				}
 				cpuInstruction = getQuadWordFromMemory(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
+				free(cpuInstruction);
+				free(disassembledInstruction);
+				instructionCount++;
 			}
 		}
 
-		free(cpuInstruction);
-		free(disassembledInstruction);
 		return RET_SUCCESS;
 	}
 
@@ -346,34 +356,25 @@ int processSimulatorCommand(char* simulatorCommand)
 	if(!(strcmp(command, "go") && strcmp(command, "g")))
 	{
 		char* cpuInstruction, *disassembledInstruction;
-		unsigned long regPC, nextBreakPoint;
+		unsigned long regPC;
 		int exitCode, instructionCount;
 		unsigned short isReset;
 
-		regPC = getRegister("pc");
-		nextBreakPoint = getNextBreakPoint(regPC, &isReset);
-		if((isLastEncounteredBreakPointValid == 1) && (nextBreakPoint == lastEncounteredBreakPoint))
-			nextBreakPoint = getNextBreakPoint(regPC + 1, &isReset);
-
-
 		if(!firstParametre)
 			return RET_FAILURE;
+
+		setRegister("pc", firstNumericParametre);
 
 		if(!secondParametre)
 		{
 			do
 			{
-				if((isReset == 0) && (regPC == nextBreakPoint))
-				{
-					lastEncounteredBreakPoint = regPC;
-					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lX\n", regPC);
-					return RET_SUCCESS;
-				}
-				setRegister("pc", secondNumericParametre);
+				regPC = getRegister("pc");
 				cpuInstruction = getQuadWordFromMemory(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
+				free(cpuInstruction);
+				free(disassembledInstruction);
 			}
 			while(exitCode == RET_SUCCESS);
 		}
@@ -382,22 +383,15 @@ int processSimulatorCommand(char* simulatorCommand)
 			exitCode = RET_SUCCESS;
 			for(instructionCount = 0; (instructionCount < secondNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
 			{
-				if((isReset == 0) && (regPC == nextBreakPoint))
-				{
-					lastEncounteredBreakPoint = regPC;
-					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lX\n", regPC);
-					return RET_SUCCESS;
-				}
-				setRegister("pc", secondNumericParametre);
+				regPC = getRegister("pc");
 				cpuInstruction = getQuadWordFromMemory(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
+				free(cpuInstruction);
+				free(disassembledInstruction);
 			}
 		}
 
-		free(cpuInstruction);
-		free(disassembledInstruction);
 		return RET_SUCCESS;
 	}
 
@@ -410,26 +404,18 @@ int processSimulatorCommand(char* simulatorCommand)
 		int exitCode, instructionCount;
 		unsigned short isReset;
 
-		regPC = getRegister("pc");
-		nextBreakPoint = getNextBreakPoint(regPC, &isReset);
-		if((isLastEncounteredBreakPointValid == 1) && (nextBreakPoint == lastEncounteredBreakPoint))
-			nextBreakPoint = getNextBreakPoint(regPC + 1, &isReset);
 		setRegister("pc", 0);
 		
 		if(!firstParametre)
 		{
 			do
 			{
-				if((isReset == 0) && (regPC == nextBreakPoint))
-				{
-					lastEncounteredBreakPoint = regPC;
-					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lX\n", regPC);
-					return RET_SUCCESS;
-				}
+				regPC = getRegister("pc");
 				cpuInstruction = getQuadWordFromMemory(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
+				free(cpuInstruction);
+				free(disassembledInstruction);
 			}
 			while(exitCode == RET_SUCCESS);
 		}
@@ -438,21 +424,16 @@ int processSimulatorCommand(char* simulatorCommand)
 			exitCode = RET_SUCCESS;
 			for(instructionCount = 0; (instructionCount < firstNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
 			{
-				if((isReset == 0) && (regPC == nextBreakPoint))
-				{
-					lastEncounteredBreakPoint = regPC;
-					isLastEncounteredBreakPointValid = 1;
-					printf("Breaking at: 0x%lX\n", regPC);
-					return RET_SUCCESS;
-				}
+				regPC = getRegister("pc");
 				cpuInstruction = getQuadWordFromMemory(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
+
+				free(cpuInstruction);
+				free(disassembledInstruction);
 			}
 		}
 
-		free(cpuInstruction);
-		free(disassembledInstruction);
 		return RET_SUCCESS;
 	}
 
@@ -462,27 +443,25 @@ int processSimulatorCommand(char* simulatorCommand)
 	{
 		if(firstParametre == NULL)
 		{
+			struct breakPoint* curBreakPoint;
 			unsigned long breakPointAddress;
-			unsigned short isReset, count; 
 			
-			isReset = 0; 
-			count = 0;
-			printf("\n");
-			while(1)
+			curBreakPoint = getBreakPoint(1);
+			if(!curBreakPoint)
+				return RET_SUCCESS;
+
+			do
 			{
-				breakPointAddress = getBreakPoint(&isReset);
-				if(isReset == 0)
-					printf("%d: 0x%lx\n", ++count, breakPointAddress);
-				else
-					break;
-			}
-			printf("\n");
+				printf("\n%d: 0x%lX", curBreakPoint->breakPointSerial, curBreakPoint->memoryAddress);
+				curBreakPoint = getBreakPoint(0);
+			}while(curBreakPoint);
+			printf("\n\n");
 		}
 		
 		else
 			if(addBreakPoint(firstNumericParametre) == BREAKPOINT_ALLOCATION_ERROR)
 			{
-				printf("\nERROR: Can't allocate breakpoint\n");
+				printf("ERROR: Can't allocate breakpoint\n");
 				return RET_FAILURE;
 			}
 			
@@ -498,7 +477,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		else
 		{
 			if(deleteBreakPoint(firstNumericParametre)  == RET_FAILURE)
-				printf("\nERROR: Can't delete breakpoint");
+				printf("ERROR: Breakpoint does not exist\n");
 			else			
 				return RET_SUCCESS;
 		}

@@ -10,7 +10,7 @@
 struct breakPoint
 {
 	unsigned long memoryAddress;
-	short status;
+	short breakPointSerial;
 	struct breakPoint* nextBreakPoint;
 };
 
@@ -19,7 +19,7 @@ struct breakPoint
 void initializeBreakPointList();
 int addBreakPoint(unsigned long memoryAddress);
 int deleteBreakPoint(unsigned short index);
-unsigned long getBreakPoint(unsigned short* isReset);
-unsigned long getNextBreakPoint(unsigned long regPC, unsigned short* isReset);
+struct breakPoint* getBreakPoint(unsigned short isReset);
+int isBreakPoint(unsigned long regPC);
 
 #endif
