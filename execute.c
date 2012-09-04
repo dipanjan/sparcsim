@@ -129,7 +129,7 @@ int executeInstruction(char* disassembledInstruction)
 		strcmp(tokens[0], "bpos") &&
 		strcmp(tokens[0], "bneg") &&
 		strcmp(tokens[0], "bvc") &&
-		strcmp(tokens[0], "bnvs")))
+		strcmp(tokens[0], "bvs")))
 	{
 		unsigned short condition;
 
