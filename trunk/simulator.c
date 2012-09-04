@@ -109,7 +109,7 @@ int processSimulatorCommand(char* simulatorCommand)
 	{
 		printf("\n\tsparcsim  [file_name]       |  load a file into simulator memory\n");
 		printf("\tsparcsim  -d [file_name]    |  disassemble SPARC ELF binary\n");
-		printf("\tsparcsim  -t [file_name]    |  execute a batch file of SPARCSIM commands\n");
+		printf("\tsparcsim  -b [file_name]    |  execute a batch file of SPARCSIM commands\n");
 		printf("\t[ba]tch <file>              |  execute a batch file of SPARCSIM commands\n");
 		printf("\t[re]set                     |  reset simulator \n");
 		printf("\t[l]oad  <file_name>         |  load a file into simulator memory\n");
