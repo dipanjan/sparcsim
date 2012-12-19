@@ -26,7 +26,6 @@ int allocateMemory(unsigned long memoryAddress)
 	if(firstPageTable[firstPageTableIndex] == NULL)
 	{
 		secondPageTable = (char**)malloc(sizeof(char*) * 1024);
-		// printf("\n\nAllocateMemory: Allocating second page table");
 
 		if(secondPageTable == NULL)
 			return SECOND_PAGE_TABLE_ALLOCATION_ERROR;
@@ -39,24 +38,16 @@ int allocateMemory(unsigned long memoryAddress)
 	else
 	{
 		secondPageTable = firstPageTable[firstPageTableIndex];
-		// printf("\n\nAllocateMemory: Second page table not allocated");
 	}
 
 	if(secondPageTable[secondPageTableIndex] == NULL)
 	{
-		// printf("\nAllocateMemory: Allocating required page");
 		secondPageTable[secondPageTableIndex] = (char*)malloc(4 * 1024);
 		if(secondPageTable[secondPageTableIndex] == NULL)
 			return PAGE_ALLOCATION_ERROR;
 	}
-	/*else
-		printf("\nAllocateMemory: Page not allocated");*/
 
 	return RET_SUCCESS;
-	//printf("Alloc: Second page table: %u\n", firstPageTable[firstPageTableIndex]);
-	//printf("Alloc: Page: %u\n", secondPageTable[secondPageTableIndex]);
-	//printf("First Page Table Index: %d\n", firstPageTableIndex);
-	//printf("Second Page Table Index: %d\n", secondPageTableIndex);
 }
 
 
@@ -72,11 +63,11 @@ char readByte(unsigned long memoryAddress)
 	if(firstPageTable[firstPageTableIndex] == NULL)
 		return (char)0;
 	else
-		secondPageTable = firstPageTable[firstPageTableIndex]; //printf("Read: Second page table: %u\n", secondPageTable);
+		secondPageTable = firstPageTable[firstPageTableIndex];
 	if(secondPageTable[secondPageTableIndex] == NULL)
 		return (char)0;
 	else
-		page = secondPageTable[secondPageTableIndex]; //printf("Read: Page: %u\n", page);
+		page = secondPageTable[secondPageTableIndex];
 	return *(page + offset);
 }
 
@@ -110,9 +101,8 @@ int writeByte(unsigned long memoryAddress, char byte)
 
 	char** secondPageTable = firstPageTable[firstPageTableIndex];
 	char* page = secondPageTable[secondPageTableIndex];
-	// printf("\nWriteMemory: FirstPageTableIndex: %lX\nSecondPageTableIndex: %lX\nOffset: %lX", firstPageTableIndex, secondPageTableIndex, offset);
-	// printf("\nSecond page table: %lX\nPage: %lX\n", (unsigned long)secondPageTable,  (unsigned long)page);
 	*(page + offset) = byte;
+        
 	return RET_SUCCESS;
 }
 

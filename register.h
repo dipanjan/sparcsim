@@ -32,17 +32,6 @@
 unsigned short isLittleEndian;
 
 
-/* gcc is not being able to pack this embedded structure 
-   contained in processor_status_register, hence unused.
-struct integer_condition_codes
-{
-      unsigned int c:1; 
-      unsigned int v:1;
-      unsigned int z:1;
-      unsigned int n:1;
-}__attribute__ ((__packed__));*/
-
-
 
 struct processor_status_register
 {

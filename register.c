@@ -28,10 +28,7 @@ void initializeRegisters()
 	sparcRegisters.psr.ef = 0;
 	sparcRegisters.psr.ec = 0;
 	sparcRegisters.psr.reserved = 0;
-	/*sparcRegisters.psr.icc.c = 0;
-	sparcRegisters.psr.icc.v = 0;
-	sparcRegisters.psr.icc.z = 0;
-	sparcRegisters.psr.icc.n = 0;*/
+	
 	sparcRegisters.psr.c = 0;
 	sparcRegisters.psr.v = 0;
 	sparcRegisters.psr.z = 0;
@@ -116,7 +113,6 @@ unsigned long getRegister(char* sparcRegister)
 		return 0;
 
 	if(!strcmp(sparcRegister, "psr")) 
-		//return FORCE_CAST (sparcRegisters.psr, unsigned long);
             return castPSRToUnsignedLong(sparcRegisters.psr);
 		
 	if(!strcmp(sparcRegister, "wim"))
@@ -170,19 +166,18 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
 	
         // Strip off leading % symbol, if present
         if(sparcRegister[0] == '%')
+        {
             while(sparcRegister[charIndex++])
                 sparcRegister[charIndex - 1] = sparcRegister[charIndex];
-        sparcRegister[charIndex - 2] = NULL;
+            sparcRegister[charIndex - 2] = NULL; 
+        }
         
-        
-	/*if(!(strcmp(sparcRegister, "g0") && (strcmp(sparcRegister, "%g0"))))
-		return;*/
+
         if(!(strcmp(sparcRegister, "g0")))
 		return;
 
 	if(!strcmp(sparcRegister, "psr"))
 	{
-		//sparcRegisters.psr = FORCE_CAST(registerValue, struct processor_status_register);
                 sparcRegisters.psr = castUnsignedLongToPSR(registerValue);
 		sparcRegisters.cwptr = sparcRegisters.registerSet + (sparcRegisters.psr.cwp - 1) * REGISTER_WINDOW_WIDTH;
 	}
@@ -212,21 +207,10 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
                 asrRegister[charIndex++] = sparcRegister[4];
             asrRegister[charIndex] = NULL;
             
-            registerIndex = strtoul(asrRegister, NULL, 0); printf("ASR %d detected\n", registerIndex);
+            registerIndex = strtoul(asrRegister, NULL, 0);
             sparcRegisters.asrRegisters[registerIndex] = registerValue; return;
         }
 
-	// Preceding % sign is present
-	/*if(strlen(sparcRegister) == 3)
-	{
-		registerType = sparcRegister[1];
-		registerIndex = sparcRegister[2] - '0';
-	}
-	else
-	{
-		registerType = sparcRegister[0];
-		registerIndex = sparcRegister[1] - '0';
-	}*/
         
         registerType = sparcRegister[0];
 	registerIndex = sparcRegister[1] - '0';
@@ -258,7 +242,6 @@ int saveRegisters()
 	short nextCWP;
 
 	regPSR = getRegister("psr");
-	//psr = FORCE_CAST(regPSR, struct processor_status_register);
         psr = castUnsignedLongToPSR(regPSR);
 	regWIM = getRegister("wim");
 

@@ -14,7 +14,6 @@ int executeInstruction(char* disassembledInstruction)
 	regPC = getRegister("pc");
 	regnPC = getRegister("npc");
 	regPSR = getRegister("psr");
-	//struct processor_status_register psr = FORCE_CAST(regPSR, struct processor_status_register);
         struct processor_status_register psr = castUnsignedLongToPSR(regPSR);
 
 
@@ -37,11 +36,6 @@ int executeInstruction(char* disassembledInstruction)
 			strcpy(tokens[++count], token);
 	}
 	while(token);
-
-	/*int i;
-	for(i = 0; i <= count; i++)
-		printf("\ntokens[%d]: %s", i, tokens[i]);
-	printf("\n");*/
 		
 	// Format - I instruction
 	if(!strcmp(tokens[0], "call"))
@@ -222,7 +216,51 @@ int executeInstruction(char* disassembledInstruction)
 	memoryAddress = getAddressValue(tokens, &index);
 	
 	
-	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "lduh")))
+        if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ldsb")))
+	{
+		char* dataWord;
+		unsigned long word, hexDigit;
+
+		dataWord = readWordAsString(memoryAddress);
+		word = 0;
+		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+                if(getBit(word, 7))
+                    word = word | 0xFFFFFF00;
+		setRegister(tokens[index], word);
+		free(dataWord);
+	}
+        
+        else
+        if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ldsh")))
+	{
+		char* dataWord;
+		unsigned long word, hexDigit;
+
+		dataWord = readWordAsString(memoryAddress);
+		word = 0;
+		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[1]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+                if(getBit(word, 15))
+                    word = word | 0xFFFF0000;
+		setRegister(tokens[index], word);
+		free(dataWord);
+	}
+        
+        else
+        if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ldub")))
+	{
+		char* dataWord;
+		unsigned long word, hexDigit;
+
+		dataWord = readWordAsString(memoryAddress);
+		word = 0;
+		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		setRegister(tokens[index], word);
+		free(dataWord);
+	}
+        
+        else
+        if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "lduh")))
 	{
 		char* dataWord;
 		unsigned long word, hexDigit;
@@ -269,7 +307,7 @@ int executeInstruction(char* disassembledInstruction)
 	}
 	
 	
-	// Decode Format - III operands for instruction having format: <opcode> <regRD> , [address ]
+	// Decode Format - III operands for instruction having format: <opcode> <regRD> , [address]
 	index = 2;
 	regRD = getRegister(tokens[1]);
 	memoryAddress = getAddressValue(tokens, &index);
@@ -277,9 +315,6 @@ int executeInstruction(char* disassembledInstruction)
 	
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sth")))
 	{
-		/*char* halfWord = (char*)&regRD;
-		writeByte(memoryAddress + 1, *halfWord); halfWord++;
-		writeByte(memoryAddress, *halfWord);*/
                 unsigned short halfWord = regRD & 0x0000FFFF;
                 writeHalfWord(memoryAddress, halfWord);
 	}
@@ -287,11 +322,6 @@ int executeInstruction(char* disassembledInstruction)
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "st")))
 	{
-		/*char* word = (char*)&regRD;
-		writeByte(memoryAddress + 3, *word); word++;
-		writeByte(memoryAddress + 2, *word); word++;
-		writeByte(memoryAddress + 1, *word); word++;
-		writeByte(memoryAddress, *word);*/
                 writeWord(memoryAddress, regRD);
 	}
 	
