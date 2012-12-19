@@ -61,7 +61,40 @@ int allocateMemory(unsigned long memoryAddress)
 
 
 
-int writeMemory(unsigned long memoryAddress, char byte)
+char readByte(unsigned long memoryAddress)
+{
+	char** secondPageTable;
+	char* page;
+	unsigned long firstPageTableIndex = memoryAddress >> 22;
+	unsigned long secondPageTableIndex = (memoryAddress << 10) >> 22;
+	unsigned long offset = (memoryAddress << 20) >> 20;
+
+	if(firstPageTable[firstPageTableIndex] == NULL)
+		return (char)0;
+	else
+		secondPageTable = firstPageTable[firstPageTableIndex]; //printf("Read: Second page table: %u\n", secondPageTable);
+	if(secondPageTable[secondPageTableIndex] == NULL)
+		return (char)0;
+	else
+		page = secondPageTable[secondPageTableIndex]; //printf("Read: Page: %u\n", page);
+	return *(page + offset);
+}
+
+
+
+char* readWordAsString(unsigned long memoryAddress)
+{
+	char* cpuInstruction = (char*)malloc(4);
+	cpuInstruction[0] = readByte(memoryAddress++);
+	cpuInstruction[1] = readByte(memoryAddress++);
+	cpuInstruction[2] = readByte(memoryAddress++);
+	cpuInstruction[3] = readByte(memoryAddress);
+	return cpuInstruction;
+}
+
+
+
+int writeByte(unsigned long memoryAddress, char byte)
 {
 	switch(allocateMemory(memoryAddress))
 	{
@@ -85,32 +118,65 @@ int writeMemory(unsigned long memoryAddress, char byte)
 
 
 
-char readMemory(unsigned long memoryAddress)
+int writeHalfWord(unsigned long memoryAddress, unsigned short halfWord)
 {
-	char** secondPageTable;
-	char* page;
+	switch(allocateMemory(memoryAddress))
+	{
+	case SECOND_PAGE_TABLE_ALLOCATION_ERROR:
+		return SECOND_PAGE_TABLE_ALLOCATION_ERROR;
+	case PAGE_ALLOCATION_ERROR:
+		return PAGE_ALLOCATION_ERROR;
+	}
+
 	unsigned long firstPageTableIndex = memoryAddress >> 22;
 	unsigned long secondPageTableIndex = (memoryAddress << 10) >> 22;
 	unsigned long offset = (memoryAddress << 20) >> 20;
+        char byte;
 
-	if(firstPageTable[firstPageTableIndex] == NULL)
-		return (char)0;
-	else
-		secondPageTable = firstPageTable[firstPageTableIndex]; //printf("Read: Second page table: %u\n", secondPageTable);
-	if(secondPageTable[secondPageTableIndex] == NULL)
-		return (char)0;
-	else
-		page = secondPageTable[secondPageTableIndex]; //printf("Read: Page: %u\n", page);
-	return *(page + offset);
+	char** secondPageTable = firstPageTable[firstPageTableIndex];
+	char* page = secondPageTable[secondPageTableIndex];
+        
+        byte = (halfWord & 0xFF00) >> 8; *(page + offset) = byte; offset++;
+        byte = halfWord & 0x00FF; *(page + offset) = byte; 
+        
+	return RET_SUCCESS;
 }
 
 
 
-void displayQuadWord(char* cpuInstruction, int isInstruction)
+int writeWord(unsigned long memoryAddress, unsigned long word)
+{
+	switch(allocateMemory(memoryAddress))
+	{
+	case SECOND_PAGE_TABLE_ALLOCATION_ERROR:
+		return SECOND_PAGE_TABLE_ALLOCATION_ERROR;
+	case PAGE_ALLOCATION_ERROR:
+		return PAGE_ALLOCATION_ERROR;
+	}
+
+	unsigned long firstPageTableIndex = memoryAddress >> 22;
+	unsigned long secondPageTableIndex = (memoryAddress << 10) >> 22;
+	unsigned long offset = (memoryAddress << 20) >> 20;
+        char byte;
+
+	char** secondPageTable = firstPageTable[firstPageTableIndex];
+	char* page = secondPageTable[secondPageTableIndex];
+        
+        byte = (word & 0xFF000000) >> 24; *(page + offset) = byte; offset++;
+        byte = (word & 0x00FF0000) >> 16; *(page + offset) = byte; offset++;
+        byte = (word & 0x0000FF00) >> 8; *(page + offset) = byte; offset++;
+        byte = word & 0x000000FF; *(page + offset) = byte;
+        
+	return RET_SUCCESS;
+}
+
+
+
+void displayWord(char* cpuInstruction, int isInstruction)
 {
 	if(cpuInstruction != NULL)
 	{
-		int count; unsigned int hexDigit;
+		int count; unsigned int hexDigit; 
 		for(count = 0; count <= 3; count++)
 		{
 			char instructionByte = cpuInstruction[count];
@@ -121,18 +187,6 @@ void displayQuadWord(char* cpuInstruction, int isInstruction)
 				printf(" ");
 		}
 	}
-}
-
-
-
-char* getQuadWordFromMemory(unsigned long memoryAddress)
-{
-	char* cpuInstruction = (char*)malloc(4);
-	cpuInstruction[0] = readMemory(memoryAddress++);
-	cpuInstruction[1] = readMemory(memoryAddress++);
-	cpuInstruction[2] = readMemory(memoryAddress++);
-	cpuInstruction[3] = readMemory(memoryAddress);
-	return cpuInstruction;
 }
 
 
@@ -148,8 +202,8 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 
 		for(counter = 0; counter < 4; counter++)
 		{
-			quadWord = getQuadWordFromMemory(memoryAddress + 4 * counter);
-			displayQuadWord(quadWord, 0);
+			quadWord = readWordAsString(memoryAddress + 4 * counter);
+			displayWord(quadWord, 0);
 			free(quadWord);
 			count -= 4;
 			printf(" ");
@@ -159,7 +213,7 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 
 		for(counter = 0; counter < 16; counter++)
 		{
-			char byte = readMemory(memoryAddress + counter);
+			char byte = readByte(memoryAddress + counter);
 			if((byte >= 33) && (byte <= 126))
 				printf("%c", byte);
 			else
@@ -175,16 +229,16 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 {
 	initializeMemory();
 
-	writeMemory(1024*4*1024-1, 'A');
-	printf("Character read: %c\n",readMemory(1024*4*1024-1));
+	writeByte(1024*4*1024-1, 'A');
+	printf("Character read: %c\n",readByte(1024*4*1024-1));
 
-	writeMemory(1024*4*1024-2, 'B');
-	printf("Character read: %c\n",readMemory(1024*4*1024-1));
-	printf("Character read: %c\n",readMemory(1024*4*1024-2));
+	writeByte(1024*4*1024-2, 'B');
+	printf("Character read: %c\n",readByte(1024*4*1024-1));
+	printf("Character read: %c\n",readByte(1024*4*1024-2));
 
-	printf("Character read: %c\n",readMemory(1024*4*1024-3)); // Should be NULL
+	printf("Character read: %c\n",readByte(1024*4*1024-3)); // Should be NULL
 
-	//printf("Character read: %c\n",readMemory(1023*4*1024-3)); Should produce segmentation fault
+	//printf("Character read: %c\n",readByte(1023*4*1024-3)); Should produce segmentation fault
 
 	getMemoryArea(1024*4*1024-16, 16);
 }*/

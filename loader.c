@@ -23,15 +23,15 @@ int initializeLoader(char *elfBinary)
 
 struct loadedSections* load_sparc_instructions(char *elfBinary)
 {
-	GElf_Ehdr elf_header;			// ELF header
+	GElf_Ehdr elf_header;		// ELF header
 	GElf_Shdr shdr;                 // Section Header
 	Elf_Scn* scn = NULL;            // Section Descriptor
 	Elf_Data* sectionData;          // Data Descriptor
-	unsigned long instrcutionCount;
+	unsigned long instructionCount;
 	int fileDescriptor;
 	struct loadedSections* elfSections, *elfSectionsPrevPtr, *elfSectionCurPtr;
 
-	instrcutionCount = 0;
+	instructionCount = 0;
 	elfSections = (struct loadedSections*)malloc(sizeof(struct loadedSections));
 	if(elfSections == NULL)
 	{
@@ -81,12 +81,12 @@ struct loadedSections* load_sparc_instructions(char *elfBinary)
 					break;
 				while (sectionDataBuffer < (char*)sectionData-> d_buf + sectionData -> d_size )
 				{
-					writeMemory(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
-					writeMemory(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
-					writeMemory(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
-					writeMemory(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
+					writeByte(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
+					writeByte(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
+					writeByte(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
+					writeByte(sectionLoadAddress, *sectionDataBuffer); sectionLoadAddress++; sectionDataBuffer++;
 					sectionDataByteCounter += 4;
-					instrcutionCount++;
+					instructionCount++;
 				}
 			}
 
@@ -97,7 +97,7 @@ struct loadedSections* load_sparc_instructions(char *elfBinary)
 				elfSectionCurPtr->sectionSize = sectionData->d_size;
 			else
 				elfSectionCurPtr->sectionSize = 0;
-			elfSectionCurPtr->instructionCount = instrcutionCount;
+			elfSectionCurPtr->instructionCount = instructionCount;
 			if((shdr.sh_flags & SHF_EXECINSTR) && (shdr.sh_flags & SHF_ALLOC))
 				elfSectionCurPtr->sectionType = CODE_SECTION;
 			else
@@ -126,8 +126,8 @@ struct loadedSections* load_sparc_instructions(char *elfBinary)
 	int count;
 	for(count = 0x10054; count <= 0x10058; count = count+= 4)
 	{
-		char* cpuInstruction = getQuadWordFromMemory(count);
-		displayQuadWord(cpuInstruction, 0);
+		char* cpuInstruction = readWordAsString(count);
+		displayWord(cpuInstruction, 0);
 		free(cpuInstruction);
 		printf("\n");
 		return 0;

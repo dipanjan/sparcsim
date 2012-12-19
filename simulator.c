@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
 	char simulatorCommand[MAX_INPUT_LENGTH];
 	
 	initializeMemory();
-    initializeRegisters();
+        initializeRegisters();
 	initializeBreakPointList();
 	
 	if(argc == 3)
@@ -191,7 +191,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		elfSectionCurPtr = load_sparc_instructions(firstParametre);
 		printf("\n");
 
-		switch(elfSectionCurPtr ->sectionType)
+		switch(elfSectionCurPtr->sectionType)
 		{
 		case ELF_FILE_DOES_NOT_EXIST_ERROR:
 			printf("Couldn't open: %s\n", firstParametre);
@@ -252,16 +252,16 @@ int processSimulatorCommand(char* simulatorCommand)
 			return RET_FAILURE;
 		else
 		{
-			char* bytePointer = (char*)&secondNumericParametre;
+			/*char* bytePointer = (char*)&secondNumericParametre;
 			unsigned short count;
 			for(count = 0; count < 4; count++)
-			{
-				switch(writeMemory(firstNumericParametre + (3 - count), *(bytePointer + count)))
+			{*/
+				switch(writeWord(firstNumericParametre, secondNumericParametre))
 				{
 					case SECOND_PAGE_TABLE_ALLOCATION_ERROR: printf("Error allocating second page table\n"); return RET_FAILURE;
 					case PAGE_ALLOCATION_ERROR: printf("Error allocating page\n"); return RET_FAILURE;
 				}
-			}	
+			//}	
 		}
 		return RET_SUCCESS;
 	}
@@ -274,10 +274,10 @@ int processSimulatorCommand(char* simulatorCommand)
 		unsigned long regPC;
 
 		regPC = getRegister("pc");
-		cpuInstruction = getQuadWordFromMemory(regPC);
+		cpuInstruction = readWordAsString(regPC);
 		disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 		printf("\t%08lX:\t", regPC);
-		displayQuadWord(cpuInstruction, 1);
+		displayWord(cpuInstruction, 1);
 		printf("\t%s\n",disassembledInstruction);
 		executeInstruction(disassembledInstruction);
 
@@ -312,7 +312,7 @@ int processSimulatorCommand(char* simulatorCommand)
 						return RET_SUCCESS;
 					}
 				}
-				cpuInstruction = getQuadWordFromMemory(regPC);
+				cpuInstruction = readWordAsString(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
 				free(cpuInstruction);
@@ -339,7 +339,7 @@ int processSimulatorCommand(char* simulatorCommand)
 						return RET_SUCCESS;
 					}
 				}
-				cpuInstruction = getQuadWordFromMemory(regPC);
+				cpuInstruction = readWordAsString(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
 				free(cpuInstruction);
@@ -364,13 +364,14 @@ int processSimulatorCommand(char* simulatorCommand)
 			return RET_FAILURE;
 
 		setRegister("pc", firstNumericParametre);
+                setRegister("npc", firstNumericParametre + 4);
 
 		if(!secondParametre)
 		{
 			do
 			{
 				regPC = getRegister("pc");
-				cpuInstruction = getQuadWordFromMemory(regPC);
+				cpuInstruction = readWordAsString(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
 				free(cpuInstruction);
@@ -384,7 +385,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			for(instructionCount = 0; (instructionCount < secondNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
 			{
 				regPC = getRegister("pc");
-				cpuInstruction = getQuadWordFromMemory(regPC);
+				cpuInstruction = readWordAsString(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
 				free(cpuInstruction);
@@ -405,13 +406,14 @@ int processSimulatorCommand(char* simulatorCommand)
 		unsigned short isReset;
 
 		setRegister("pc", 0);
+                setRegister("npc", 4);
 		
 		if(!firstParametre)
 		{
 			do
 			{
 				regPC = getRegister("pc");
-				cpuInstruction = getQuadWordFromMemory(regPC);
+				cpuInstruction = readWordAsString(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
 				free(cpuInstruction);
@@ -425,7 +427,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			for(instructionCount = 0; (instructionCount < firstNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
 			{
 				regPC = getRegister("pc");
-				cpuInstruction = getQuadWordFromMemory(regPC);
+				cpuInstruction = readWordAsString(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
 
@@ -574,10 +576,10 @@ int processSimulatorCommand(char* simulatorCommand)
 			
 			regPC = getRegister("pc");
 			registerValue = displayRegister(regPC);
-			cpuInstruction = getQuadWordFromMemory(regPC);
+			cpuInstruction = readWordAsString(regPC);
 			disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 			printf("\tpc : %s\t\t", registerValue);
-			displayQuadWord(cpuInstruction, 1);
+			displayWord(cpuInstruction, 1);
 			printf("\t%s", disassembledInstruction);
 			free(cpuInstruction);
 			free(disassembledInstruction);
@@ -585,10 +587,10 @@ int processSimulatorCommand(char* simulatorCommand)
 			
 			regPC = getRegister("npc");
 			registerValue = displayRegister(regPC);
-			cpuInstruction = getQuadWordFromMemory(regPC);
+			cpuInstruction = readWordAsString(regPC);
 			disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 			printf("\n\tnpc: %s\t\t", registerValue);
-			displayQuadWord(cpuInstruction, 1);
+			displayWord(cpuInstruction, 1);
 			printf("\t%s", disassembledInstruction);
 			free(cpuInstruction);
 			free(disassembledInstruction);
@@ -616,12 +618,12 @@ int processSimulatorCommand(char* simulatorCommand)
 		
 		for(instructionCount = 0; instructionCount < secondNumericParametre; instructionCount++)
 		{
-			cpuInstruction = getQuadWordFromMemory(firstNumericParametre);
+			cpuInstruction = readWordAsString(firstNumericParametre);
 			disassembledInstruction = (char*)decodeInstruction(cpuInstruction, firstNumericParametre);
 			printf("\n\t");
 			sprintf(hexNumber, "%lx", firstNumericParametre);
 			printf("0x%s:\t", hexNumber);
-			displayQuadWord(cpuInstruction, 1);
+			displayWord(cpuInstruction, 1);
 			printf("\t%s", disassembledInstruction);
 			firstNumericParametre += 4;
 		}

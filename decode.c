@@ -13,7 +13,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 	char* address = NULL;
 	char* reg_or_imm = NULL;
 	
-	// Pack Quarword together
+	// Pack Word together
 	instructionWord = 0;
 	hexDigit = cpuInstruction[0]; hexDigit = (hexDigit << 24) >> 24; instructionWord = (instructionWord << 8) | hexDigit;
 	hexDigit = cpuInstruction[1]; hexDigit = (hexDigit << 24) >> 24; instructionWord = (instructionWord << 8) | hexDigit;
@@ -62,8 +62,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				a = (instructionWord & 0x20000000) >> 29;
 				cond = (instructionWord & 0x1E000000) >> 25;
 				disp22 = instructionWord & 0x003FFFFF;
-				// Sign extend disp22
-				sign_extended_disp22 = (disp22 & 0x3FFFFF) | ((disp22 & 0x20000) ? 0xFFC00000 : 0);
+				sign_extended_disp22 = (disp22 & 0x3FFFFF) | ((disp22 & 0x20000) ? 0xFFC00000 : 0); // Sign extend disp22
 				disp22 = sign_extended_disp22;
 				
 				switch(op2)
@@ -172,6 +171,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
             rs2 = instructionWord & 0x0000201F;
             asi = (instructionWord & 0x00001FE0) >> 5;
             opf = (instructionWord & 0x00003FE0) >> 5;
+            
             // Sign extend simm13
             sign_extended_simm13 = (simm13 & 0x1FFF) | ((simm13 & 0x1000) ? 0xFFFFE000 : 0);
             simm13 = sign_extended_simm13;
@@ -462,7 +462,19 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 
 					switch(op3)
 					{
-						case 0b110000: strcat(disassembledInstruction, "%y"); break;
+						case 0b110000: 
+                                                {
+                                                    if(rd == 0 && op3 == 0x30)    
+                                                        strcat(disassembledInstruction, "%y"); 
+                                                    else
+                                                    {
+                                                        char* asrRegister = (char*)malloc(3);
+                                                        strcat(disassembledInstruction, "%asr");
+                                                        sprintf(asrRegister, "%d", rd);
+                                                        strcat(disassembledInstruction, asrRegister); 
+                                                    }
+                                                    break;
+                                                }
 						case 0b110001: strcat(disassembledInstruction, "%psr"); break;
 						case 0b110010: strcat(disassembledInstruction, "%wim"); break;
 						case 0b110011: strcat(disassembledInstruction, "%tbr"); break;
