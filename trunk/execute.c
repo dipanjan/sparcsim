@@ -14,7 +14,8 @@ int executeInstruction(char* disassembledInstruction)
 	regPC = getRegister("pc");
 	regnPC = getRegister("npc");
 	regPSR = getRegister("psr");
-	struct processor_status_register psr = FORCE_CAST(regPSR, struct processor_status_register);
+	//struct processor_status_register psr = FORCE_CAST(regPSR, struct processor_status_register);
+        struct processor_status_register psr = castUnsignedLongToPSR(regPSR);
 
 
 	// Strip off %hi to differentiate it from SETHI instruction
@@ -226,7 +227,7 @@ int executeInstruction(char* disassembledInstruction)
 		char* dataWord;
 		unsigned long word, hexDigit;
 
-		dataWord = getQuadWordFromMemory(memoryAddress);
+		dataWord = readWordAsString(memoryAddress);
 		word = 0;
 		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
 		hexDigit = dataWord[1]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
@@ -240,7 +241,7 @@ int executeInstruction(char* disassembledInstruction)
 		char* dataWord;
 		unsigned long word, hexDigit;
 
-		dataWord = getQuadWordFromMemory(memoryAddress);
+		dataWord = readWordAsString(memoryAddress);
 		word = 0;
 		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
 		hexDigit = dataWord[1]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
@@ -276,19 +277,22 @@ int executeInstruction(char* disassembledInstruction)
 	
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sth")))
 	{
-		char* halfWord = (char*)&regRD;
-		writeMemory(memoryAddress + 1, *halfWord); halfWord++;
-		writeMemory(memoryAddress, *halfWord);
+		/*char* halfWord = (char*)&regRD;
+		writeByte(memoryAddress + 1, *halfWord); halfWord++;
+		writeByte(memoryAddress, *halfWord);*/
+                unsigned short halfWord = regRD & 0x0000FFFF;
+                writeHalfWord(memoryAddress, halfWord);
 	}
 	
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "st")))
 	{
-		char* word = (char*)&regRD;
-		writeMemory(memoryAddress + 3, *word); word++;
-		writeMemory(memoryAddress + 2, *word); word++;
-		writeMemory(memoryAddress + 1, *word); word++;
-		writeMemory(memoryAddress, *word);
+		/*char* word = (char*)&regRD;
+		writeByte(memoryAddress + 3, *word); word++;
+		writeByte(memoryAddress + 2, *word); word++;
+		writeByte(memoryAddress + 1, *word); word++;
+		writeByte(memoryAddress, *word);*/
+                writeWord(memoryAddress, regRD);
 	}
 	
 	
@@ -451,9 +455,9 @@ unsigned long getAddressValue(char tokens[][20], unsigned short* index)
 
 void updateICC(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD)
 {
-	// Disambiguation between CARRY and OVERFLOW flag:
-	// 1. http://teaching.idallen.com/dat2343/10f/notes/040_overflow.txt
-	// 2. http://www.c-jump.com/CIS77/CPU/Overflow/lecture.html
+	/* Disambiguation between CARRY and OVERFLOW flag:
+	   1. http://teaching.idallen.com/dat2343/10f/notes/040_overflow.txt
+	   2. http://www.c-jump.com/CIS77/CPU/Overflow/lecture.html */
 
 	unsigned long regPSR;
 	unsigned short signBit_regRS1, signBit_reg_or_imm, signBit_regRD, isCarry, isOverflow;

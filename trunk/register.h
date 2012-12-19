@@ -10,16 +10,31 @@
 
 
 
-#define FORCE_CAST(var, type)			 *(type*)&var
+/* FORCE_CASTING is dangerous and highly unpredictable due to arrangement of 
+ bit field fields in memory. While it works like a charm on Intel x86, 
+ Ubuntu 10.10, gcc 4.4 platform, it fails for SPARC v9, Solaris 10, gcc 4.7.2.
+ On Little Endian (Intel) platform, fields are arranged in order from first to 
+ last, LSB to MSB. On Big Endian (SPARC) platform, gcc arranges bit field fields
+ in a random fashion. Test shows setting only CWP:5 bits to all 1's, i.e. 0x1F
+ gives rise to 0x000000F8 bit pattern in PSR structure. Due to C99 standard being
+ silent about specifics of bit fields, using this macro is non-portable and 
+ compiler dependent. Hence, appropriate bit-masking and bit-shifting operators
+ will be used to explicitely disassemble bits in a bit field stream and to assign 
+ to PSR structure. 
+#define FORCE_CAST(var, type)			 *(type*)&var */
+
 #define SIZEOF_INTEGER_REGISTER  	 	 4
 #define SIZEOF_WIM_REGISTER     		 4
 #define REGISTER_WINDOW_WIDTH    		16
 #define GLOBAL_REGISTERS       		 	 8
 
 
+unsigned short isLittleEndian;
 
-// GCC is not being able to pack this embedded structure contained in processor_status_register, hence disabled
-/*struct integer_condition_codes
+
+/* gcc is not being able to pack this embedded structure 
+   contained in processor_status_register, hence unused.
+struct integer_condition_codes
 {
       unsigned int c:1; 
       unsigned int v:1;
@@ -44,8 +59,6 @@ struct processor_status_register
 	unsigned int v:1;
 	unsigned int z:1;
 	unsigned int n:1;
-	  
-	//struct integer_condition_codes icc;
 
 	unsigned int ver:4;
 	unsigned int impl:4;
@@ -58,10 +71,19 @@ struct registers
        unsigned long* registerSet;
        unsigned long* globalRegisters;
        unsigned long* cwptr;
-	   unsigned long wim, tbr, y, pc, npc;
-	   unsigned short registerWindows;
-       struct processor_status_register psr;
-};
+       unsigned long wim, tbr, y, pc, npc;
+       unsigned long asrRegisters[32];
+       unsigned short registerWindows;
+       
+       /* Though Intel x86 architecture allows un-aligned memory access, SPARC mandates memory accesses to be 8 byte aligned.
+        Without __attribute__ ((aligned (8))) or a preceding dummy byte e.g. unsigned short dummyByte, the code below crashes 
+        with a dreaded Bus error and Core dump. For more details, follow the links below:
+        
+        http://blog.jgc.org/2007/04/debugging-solaris-bus-error-caused-by.html
+        https://groups.google.com/forum/?fromgroups=#!topic/comp.unix.solaris/8SgFiMudGL4 */
+       
+       struct processor_status_register __attribute__ ((aligned (8))) psr;
+}__attribute__ ((__packed__));
 
 
 
@@ -73,5 +95,7 @@ unsigned long getRegister(char* sparcRegister);
 void setRegister(char* sparcRegister, unsigned long registerValue);
 int saveRegisters();
 int restoreRegisters();
+unsigned long castPSRToUnsignedLong(struct processor_status_register psr);
+struct processor_status_register castUnsignedLongToPSR(unsigned long registerValue);
 
 #endif
