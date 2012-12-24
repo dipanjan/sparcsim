@@ -310,8 +310,24 @@ int executeInstruction(char* disassembledInstruction)
 		hexDigit = dataWord[2]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
 		hexDigit = dataWord[3]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
                 setRegister(getNextRegister(tokens[index]), word);
-                
 		free(dataWord);
+	}
+        
+        else
+        if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ldstub")))
+	{
+		setRegister(tokens[index], readByte(memoryAddress));
+		writeByte(memoryAddress, 0xFF);
+	}
+        
+        else
+        if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "swap")))
+	{
+                unsigned long registerContent;
+                
+                registerContent = getRegister(tokens[index]);
+                setRegister(tokens[index], readWord(memoryAddress)); printf("MemoryWord: 0x%lX\n", readWord(memoryAddress));
+		writeWord(memoryAddress, registerContent);
 	}
 	
 	else
@@ -337,7 +353,13 @@ int executeInstruction(char* disassembledInstruction)
 	regRD = getRegister(tokens[1]);
 	memoryAddress = getAddressValue(tokens, &index);
 	
-	
+        if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "stb")))
+	{
+                char byte = regRD & 0x000000FF;
+                writeByte(memoryAddress, byte);
+	}
+        
+        else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sth")))
 	{
                 unsigned short halfWord = regRD & 0x0000FFFF;
@@ -348,6 +370,16 @@ int executeInstruction(char* disassembledInstruction)
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "st")))
 	{
                 writeWord(memoryAddress, regRD);
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "std")))
+	{
+                unsigned long regNextRD;
+                
+                writeWord(memoryAddress, regRD);
+                regNextRD = getRegister(getNextRegister(tokens[1]));
+                writeWord(memoryAddress + 4, regNextRD);
 	}
 	
 	
