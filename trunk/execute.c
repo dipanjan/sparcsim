@@ -271,7 +271,7 @@ int executeInstruction(char* disassembledInstruction)
 		hexDigit = dataWord[1]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
 		setRegister(tokens[index], word);
 		free(dataWord);
-	}
+        }
 	
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ld")))
@@ -286,6 +286,31 @@ int executeInstruction(char* disassembledInstruction)
 		hexDigit = dataWord[2]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
 		hexDigit = dataWord[3]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
 		setRegister(tokens[index], word);
+		free(dataWord);
+	}
+        
+        else
+        if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ldd")))
+	{
+		char* dataWord;
+		unsigned long word, hexDigit;
+
+		dataWord = readWordAsString(memoryAddress); 
+                word = 0;
+		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[1]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[2]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[3]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		setRegister(tokens[index], word);
+                
+                dataWord = readWordAsString(memoryAddress + 4); 
+                word = 0;
+		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[1]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[2]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+		hexDigit = dataWord[3]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+                setRegister(getNextRegister(tokens[index]), word);
+                
 		free(dataWord);
 	}
 	
