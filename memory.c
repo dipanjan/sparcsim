@@ -74,6 +74,20 @@ char readByte(unsigned long memoryAddress)
 
 
 
+unsigned long readWord(unsigned long memoryAddress)
+{        
+        unsigned long word, hexDigit;
+        
+        hexDigit = readByte(memoryAddress); memoryAddress++; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+        hexDigit = readByte(memoryAddress); memoryAddress++; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+        hexDigit = readByte(memoryAddress); memoryAddress++; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+        hexDigit = readByte(memoryAddress); memoryAddress++; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+        
+        return word;
+}
+
+
+
 int writeByte(unsigned long memoryAddress, char byte)
 {
 	switch(allocateMemory(memoryAddress))

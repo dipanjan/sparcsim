@@ -10,6 +10,7 @@
 void initializeMemory();
 int allocateMemory(unsigned long memoryAddress);
 char readByte(unsigned long memoryAddress);
+unsigned long readWord(unsigned long memoryAddress);
 int writeByte(unsigned long memoryAddress, char byte);
 int writeHalfWord(unsigned long memoryAddress, unsigned short halfWord);
 int writeWord(unsigned long memoryAddress, unsigned long word);
