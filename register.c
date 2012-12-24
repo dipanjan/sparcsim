@@ -169,7 +169,7 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
         {
             while(sparcRegister[charIndex++])
                 sparcRegister[charIndex - 1] = sparcRegister[charIndex];
-            sparcRegister[charIndex - 2] = NULL; 
+            sparcRegister[charIndex - 2] = '\0'; 
         }
         
 
@@ -205,7 +205,7 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
                 asrRegister[charIndex++] = sparcRegister[3];
             if(sparcRegister[4] >= '0' && sparcRegister[4] <= '9')
                 asrRegister[charIndex++] = sparcRegister[4];
-            asrRegister[charIndex] = NULL;
+            asrRegister[charIndex] = '\0';
             
             registerIndex = strtoul(asrRegister, NULL, 0);
             sparcRegisters.asrRegisters[registerIndex] = registerValue; return;
@@ -347,4 +347,18 @@ unsigned long castPSRToUnsignedLong(struct processor_status_register psr)
 	registerValue = registerValue | (psr.impl << 28);	
 
 	return registerValue;
+}
+
+
+
+char* getNextRegister(char* sparcRegister)
+{
+    char registerType;
+    unsigned short nextRegisterIndex;
+    
+    registerType = sparcRegister[0];
+    nextRegisterIndex = (sparcRegister[1] - '0') + 1;
+    sparcRegister[1] = nextRegisterIndex + '0';
+    
+    return sparcRegister;
 }

@@ -68,19 +68,8 @@ char readByte(unsigned long memoryAddress)
 		return (char)0;
 	else
 		page = secondPageTable[secondPageTableIndex];
+        
 	return *(page + offset);
-}
-
-
-
-char* readWordAsString(unsigned long memoryAddress)
-{
-	char* cpuInstruction = (char*)malloc(4);
-	cpuInstruction[0] = readByte(memoryAddress++);
-	cpuInstruction[1] = readByte(memoryAddress++);
-	cpuInstruction[2] = readByte(memoryAddress++);
-	cpuInstruction[3] = readByte(memoryAddress);
-	return cpuInstruction;
 }
 
 
@@ -158,6 +147,18 @@ int writeWord(unsigned long memoryAddress, unsigned long word)
         byte = word & 0x000000FF; *(page + offset) = byte;
         
 	return RET_SUCCESS;
+}
+
+
+
+char* readWordAsString(unsigned long memoryAddress)
+{
+	char* cpuInstruction = (char*)malloc(4);
+	cpuInstruction[0] = readByte(memoryAddress++);
+	cpuInstruction[1] = readByte(memoryAddress++);
+	cpuInstruction[2] = readByte(memoryAddress++);
+	cpuInstruction[3] = readByte(memoryAddress);
+	return cpuInstruction;
 }
 
 

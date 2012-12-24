@@ -86,5 +86,6 @@ int saveRegisters();
 int restoreRegisters();
 unsigned long castPSRToUnsignedLong(struct processor_status_register psr);
 struct processor_status_register castUnsignedLongToPSR(unsigned long registerValue);
+char* getNextRegister(char* sparcRegister);
 
 #endif

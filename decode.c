@@ -470,7 +470,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
                                                     {
                                                         char* asrRegister = (char*)malloc(3);
                                                         strcat(disassembledInstruction, "%asr");
-                                                        sprintf(asrRegister, "%d", rd);
+                                                        sprintf(asrRegister, "%ld", rd);
                                                         strcat(disassembledInstruction, asrRegister); 
                                                     }
                                                     break;
