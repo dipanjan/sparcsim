@@ -160,6 +160,7 @@
         </loadobjs>
       </dbxrtc>
       <gizmo_options version="3">
+        <configurationname>GizmoSunStudioStandard</configurationname>
       </gizmo_options>
       <nativedebugger version="1">
         <engine>dbx</engine>
@@ -169,7 +170,7 @@
           <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
         </runcommandpicklist>
         <runcommand>"${OUTPUT_PATH}"</runcommand>
-        <rundir></rundir>
+        <rundir>/home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc</rundir>
         <buildfirst>true</buildfirst>
         <console-type>1</console-type>
         <terminal-type>0</terminal-type>

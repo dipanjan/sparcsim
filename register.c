@@ -172,14 +172,14 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
             sparcRegister[charIndex - 2] = '\0'; 
         }
         
-
         if(!(strcmp(sparcRegister, "g0")))
 		return;
 
 	if(!strcmp(sparcRegister, "psr"))
 	{
                 sparcRegisters.psr = castUnsignedLongToPSR(registerValue);
-		sparcRegisters.cwptr = sparcRegisters.registerSet + (sparcRegisters.psr.cwp - 1) * REGISTER_WINDOW_WIDTH;
+                sparcRegisters.cwptr = sparcRegisters.registerSet + sparcRegisters.psr.cwp * REGISTER_WINDOW_WIDTH;
+		//sparcRegisters.cwptr = sparcRegisters.registerSet + (sparcRegisters.psr.cwp - 1) * REGISTER_WINDOW_WIDTH;
 	}
 		
 	if(!strcmp(sparcRegister, "wim"))

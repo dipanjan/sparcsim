@@ -47,7 +47,7 @@ OBJECTFILES= \
 
 
 # C Compiler Flags
-CFLAGS=-I. -I /usr/local/include/ -I /usr/local/include/CUnit
+CFLAGS=-I. -I /usr/local/include/
 
 # CC Compiler Flags
 CCFLAGS=
@@ -64,61 +64,61 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/sparcsim
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk /home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc/sparcsim
 
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/sparcsim: ${OBJECTFILES}
-	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	gcc -lelf -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/sparcsim ${OBJECTFILES} ${LDLIBSOPTIONS} 
+/home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc/sparcsim: ${OBJECTFILES}
+	${MKDIR} -p /home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc
+	gcc -lelf -o /home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc/sparcsim ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
 ${OBJECTDIR}/loader.o: loader.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/loader.o loader.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/loader.o loader.c
 
 ${OBJECTDIR}/misc.o: misc.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/misc.o misc.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/misc.o misc.c
 
 ${OBJECTDIR}/breakpoint.o: breakpoint.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/breakpoint.o breakpoint.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/breakpoint.o breakpoint.c
 
 ${OBJECTDIR}/register.o: register.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/register.o register.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/register.o register.c
 
 ${OBJECTDIR}/decode.o: decode.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/decode.o decode.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/decode.o decode.c
 
 ${OBJECTDIR}/memory.o: memory.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/memory.o memory.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/memory.o memory.c
 
 ${OBJECTDIR}/execute.o: execute.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/execute.o execute.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/execute.o execute.c
 
 ${OBJECTDIR}/trap.o: trap.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/trap.o trap.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/trap.o trap.c
 
 ${OBJECTDIR}/simulator.o: simulator.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/simulator.o simulator.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/simulator.o simulator.c
 
 ${OBJECTDIR}/bits.o: bits.c 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.c) -MMD -MP -MF $@.d -o ${OBJECTDIR}/bits.o bits.c
+	$(COMPILE.c) -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/bits.o bits.c
 
 # Subprojects
 .build-subprojects:
@@ -126,7 +126,7 @@ ${OBJECTDIR}/bits.o: bits.c
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r ${CND_BUILDDIR}/${CND_CONF}
-	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/sparcsim
+	${RM} /home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc/sparcsim
 
 # Subprojects
 .clean-subprojects:
