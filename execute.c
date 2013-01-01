@@ -434,6 +434,21 @@ int executeInstruction(char* disassembledInstruction)
 		updateICC(regRS1, reg_or_imm, regRD);
 	}
 
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "subx")))
+	{
+		regRD = regRS1 - reg_or_imm - psr.c;
+		setRegister(tokens[3], regRD); 
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "subxcc")))
+	{
+		regRD = regRS1 - reg_or_imm - psr.c;
+		setRegister(tokens[3], regRD);
+		updateICC(regRS1, reg_or_imm, regRD);
+	}
+        
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "umul")))
 	{
@@ -447,6 +462,22 @@ int executeInstruction(char* disassembledInstruction)
 		extended_regRD = extended_regRD & 0x00000000FFFFFFFFULL;
 		regRD = regRD | (unsigned long)extended_regRD;
 		setRegister(tokens[3], regRD);
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "umulcc")))
+	{
+		unsigned long long extended_regRD;
+		unsigned long regY;
+
+		regY = 0, regRD = 0;
+		extended_regRD = (unsigned long long)regRS1 * (unsigned long long)reg_or_imm;
+		regY = regY | (unsigned long)((extended_regRD & 0xFFFFFFFF00000000ULL) >> 32);
+		setRegister("y", regY);
+		extended_regRD = extended_regRD & 0x00000000FFFFFFFFULL;
+		regRD = regRD | (unsigned long)extended_regRD;
+		setRegister(tokens[3], regRD);
+                updateICCMulDivLogical(regRS1, reg_or_imm, regRD);
 	}
 
 	else
@@ -465,6 +496,29 @@ int executeInstruction(char* disassembledInstruction)
 		else
 			setRegister(tokens[3], (unsigned long)quotient);
 	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "udivcc")))
+	{
+		unsigned long long dividend, quotient;
+		unsigned long regY;
+
+		regY = getRegister("y");
+		dividend = (dividend << 32) | regY;
+		dividend = (dividend << 32) | regRS1;
+		quotient = dividend / reg_or_imm;
+
+		if(quotient > ULONG_MAX)
+                {
+			setRegister(tokens[3], 0xFFFFFFFF);
+                        updateICCMulDivLogical(regRS1, reg_or_imm, 0xFFFFFFFF);
+                }
+		else
+                {
+			setRegister(tokens[3], (unsigned long)quotient);
+                        updateICCMulDivLogical(regRS1, reg_or_imm, (unsigned long)quotient);
+                }
+	}
 
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "and")))
@@ -475,7 +529,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 & reg_or_imm;
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCMulDivLogical(regRS1, reg_or_imm, regRD);
 	}
         
         else
@@ -483,7 +537,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 & (~reg_or_imm);
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCMulDivLogical(regRS1, reg_or_imm, regRD);
 	}
         
         else
@@ -499,7 +553,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 | reg_or_imm;
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCMulDivLogical(regRS1, reg_or_imm, regRD);
 	}
         
         else
@@ -511,7 +565,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 | (~reg_or_imm);
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCMulDivLogical(regRS1, reg_or_imm, regRD);
 	}
         
         else
@@ -523,7 +577,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 ^ reg_or_imm;
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCMulDivLogical(regRS1, reg_or_imm, regRD);
 	}
         
 	else
@@ -535,7 +589,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = ~(regRS1 ^ reg_or_imm);
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCMulDivLogical(regRS1, reg_or_imm, regRD);
 	}
 
 	else
@@ -644,6 +698,39 @@ void updateICC(unsigned long regRS1, unsigned long reg_or_imm, unsigned long reg
 
 	// Set ICC_CARRY (c) bit: Important for UNSIGNED arithmetic
 	regPSR = (!signBit_regRS1 && signBit_reg_or_imm) || (signBit_regRD && (!signBit_regRS1 || signBit_reg_or_imm)) ? setBit(regPSR, ICC_CARRY) : clearBit(regPSR, ICC_CARRY);
+
+
+	// Set PSR back to modify ICC bits
+	setRegister("psr", regPSR);
+}
+
+
+
+void updateICCMulDivLogical(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD)
+{
+	unsigned long regPSR;
+	unsigned short signBit_regRS1, signBit_reg_or_imm, signBit_regRD, isCarry, isOverflow;
+	
+
+	regPSR = getRegister("psr");
+	signBit_regRS1 = getBit(regRS1, SIGN_BIT);
+	signBit_reg_or_imm = getBit(reg_or_imm, SIGN_BIT);
+	signBit_regRD = getBit(regRD, SIGN_BIT);
+
+	// Set ICC_NEGATIVE (n) bit
+	regPSR = getBit(regRD, SIGN_BIT) ? setBit(regPSR, ICC_NEGATIVE) : clearBit(regPSR, ICC_NEGATIVE);
+	
+
+	// Set ICC_ZERO (z) bit
+	regPSR = (regRD == 0) ? setBit(regPSR, ICC_ZERO) : clearBit(regPSR, ICC_ZERO);
+
+
+	// Set ICC_OVERFLOW (v) bit: Important for SIGNED arithmetic
+	regPSR = clearBit(regPSR, ICC_OVERFLOW);
+
+
+	// Set ICC_CARRY (c) bit: Important for UNSIGNED arithmetic
+	regPSR = clearBit(regPSR, ICC_CARRY);
 
 
 	// Set PSR back to modify ICC bits
