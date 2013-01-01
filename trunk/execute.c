@@ -326,7 +326,7 @@ int executeInstruction(char* disassembledInstruction)
                 unsigned long registerContent;
                 
                 registerContent = getRegister(tokens[index]);
-                setRegister(tokens[index], readWord(memoryAddress)); printf("MemoryWord: 0x%lX\n", readWord(memoryAddress));
+                setRegister(tokens[index], readWord(memoryAddress));
 		writeWord(memoryAddress, registerContent);
 	}
 	
@@ -397,8 +397,31 @@ int executeInstruction(char* disassembledInstruction)
 
 	
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "add")))
-		setRegister(tokens[3], regRS1 + reg_or_imm);
+                setRegister(tokens[3], regRS1 + reg_or_imm);
 
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "addcc")))
+	{
+		regRD = regRS1 + reg_or_imm;
+		setRegister(tokens[3], regRD);
+		updateICC(regRS1, reg_or_imm, regRD);
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "addx")))
+	{
+		regRD = regRS1 + reg_or_imm + psr.c;
+		setRegister(tokens[3], regRD); 
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "addxcc")))
+	{
+		regRD = regRS1 + reg_or_imm + psr.c;
+		setRegister(tokens[3], regRD);
+		updateICC(regRS1, reg_or_imm, regRD);
+	}
+        
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sub")))
 		setRegister(tokens[3], regRS1 - reg_or_imm);
@@ -454,14 +477,66 @@ int executeInstruction(char* disassembledInstruction)
 		setRegister(tokens[3], regRD);
 		updateICC(regRS1, reg_or_imm, regRD);
 	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "andncc")))
+	{
+		regRD = regRS1 & (~reg_or_imm);
+		setRegister(tokens[3], regRD);
+		updateICC(regRS1, reg_or_imm, regRD);
+	}
+        
+        else
+        if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "andn")))
+		setRegister(tokens[3], regRS1 & (~reg_or_imm));
 
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "or")))
 		setRegister(tokens[3], regRS1 | reg_or_imm);
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "orcc")))
+	{
+		regRD = regRS1 | reg_or_imm;
+		setRegister(tokens[3], regRD);
+		updateICC(regRS1, reg_or_imm, regRD);
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "orn")))
+		setRegister(tokens[3], regRS1 | (~reg_or_imm));
 
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "orncc")))
+	{
+		regRD = regRS1 | (~reg_or_imm);
+		setRegister(tokens[3], regRD);
+		updateICC(regRS1, reg_or_imm, regRD);
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "xor")))
+		setRegister(tokens[3], regRS1 ^ reg_or_imm);
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "xorcc")))
+	{
+		regRD = regRS1 ^ reg_or_imm;
+		setRegister(tokens[3], regRD);
+		updateICC(regRS1, reg_or_imm, regRD);
+	}
+        
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "xnor")))
 		setRegister(tokens[3], ~(regRS1 ^ reg_or_imm));
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "xnorcc")))
+	{
+		regRD = ~(regRS1 ^ reg_or_imm);
+		setRegister(tokens[3], regRD);
+		updateICC(regRS1, reg_or_imm, regRD);
+	}
 
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sll")))

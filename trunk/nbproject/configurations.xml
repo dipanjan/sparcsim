@@ -53,11 +53,10 @@
       <compileType>
         <cTool>
           <commandlineTool>cc</commandlineTool>
-        </cTool>
-      </compileType>
-      <folder path="TestFiles/f1">
-        <cTool>
           <incDir>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
             <pElem>.</pElem>
             <pElem>.</pElem>
             <pElem>.</pElem>
@@ -66,6 +65,9 @@
         </cTool>
         <ccTool>
           <incDir>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
             <pElem>.</pElem>
             <pElem>.</pElem>
             <pElem>.</pElem>
@@ -75,24 +77,7 @@
         <linkerTool>
           <output>${TESTDIR}/TestFiles/f1</output>
         </linkerTool>
-      </folder>
-      <folder path="TestFiles/f2">
-        <cTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </ccTool>
-        <linkerTool>
-          <output>${TESTDIR}/TestFiles/f2</output>
-        </linkerTool>
-      </folder>
+      </compileType>
     </conf>
     <conf name="Release" type="1">
       <toolsSet>
@@ -102,9 +87,27 @@
       <compileType>
         <cTool>
           <developmentMode>5</developmentMode>
+          <incDir>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+          </incDir>
         </cTool>
         <ccTool>
           <developmentMode>5</developmentMode>
+          <incDir>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>
@@ -112,45 +115,10 @@
         <asmTool>
           <developmentMode>5</developmentMode>
         </asmTool>
-      </compileType>
-      <folder path="TestFiles/f1">
-        <cTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </ccTool>
         <linkerTool>
           <output>${TESTDIR}/TestFiles/f1</output>
         </linkerTool>
-      </folder>
-      <folder path="TestFiles/f2">
-        <cTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </ccTool>
-        <linkerTool>
-          <output>${TESTDIR}/TestFiles/f2</output>
-        </linkerTool>
-      </folder>
+      </compileType>
     </conf>
     <conf name="gcc" type="1">
       <toolsSet>
@@ -161,11 +129,17 @@
         <cTool>
           <developmentMode>0</developmentMode>
           <commandlineTool>/usr/local/bin/gcc</commandlineTool>
-          <commandLine>-I. -I /usr/local/include/ -I /usr/local/include/CUnit</commandLine>
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
+          <commandLine>-I. -I /usr/local/include/</commandLine>
         </cTool>
         <ccTool>
           <developmentMode>0</developmentMode>
           <commandlineTool>/usr/local/bin/g++</commandlineTool>
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
         <fortranCompilerTool>
           <developmentMode>0</developmentMode>
@@ -176,60 +150,11 @@
           <commandlineTool>/usr/local/bin/as</commandlineTool>
         </asmTool>
         <linkerTool>
+          <output>/home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc/sparcsim</output>
           <commandlineTool>gcc</commandlineTool>
           <commandLine>-lelf</commandLine>
         </linkerTool>
       </compileType>
-      <folder path="TestFiles">
-        <linkerTool>
-          <commandLine>-lelf</commandLine>
-        </linkerTool>
-      </folder>
-      <folder path="TestFiles/f1">
-        <cTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </ccTool>
-        <linkerTool>
-          <output>${TESTDIR}/TestFiles/f1</output>
-          <linkerLibItems>
-            <linkerLibStdlibItem>CUnit</linkerLibStdlibItem>
-            <linkerLibStdlibItem>CUnit</linkerLibStdlibItem>
-          </linkerLibItems>
-        </linkerTool>
-      </folder>
-      <folder path="TestFiles/f2">
-        <cTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </cTool>
-        <ccTool>
-          <incDir>
-            <pElem>.</pElem>
-            <pElem>.</pElem>
-          </incDir>
-        </ccTool>
-        <linkerTool>
-          <output>${TESTDIR}/TestFiles/f2</output>
-          <linkerLibItems>
-            <linkerLibStdlibItem>CUnit</linkerLibStdlibItem>
-          </linkerLibItems>
-        </linkerTool>
-      </folder>
     </conf>
   </confs>
 </configurationDescriptor>
