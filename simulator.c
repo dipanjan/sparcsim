@@ -120,6 +120,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		printf("\t[de]l <num>                 |  delete breakpoint <num>\n");
 		printf("\t[br]eak                     |  print all breakpoints\n");
 		printf("\t[r]eg [reg] [val]           |  show/set integer registers (or windows, eg 'reg w2'\n");
+                printf("\t[f]loat                     |  print the FPU registers\n");
 		printf("\t[d]is [addr] [count]        |  disassemble [count] instructions at address [addr]\n");
 		printf("\t[c]ont [cnt]                |  continue execution for [cnt] instructions\n");
 		printf("\t[g]o <addr> [cnt]           |  start execution at <addr>\n");
@@ -527,7 +528,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		sparcRegister[2] = '\0';
 
 		if(firstParametre != NULL && secondParametre != NULL)
-			setRegister(firstParametre, secondNumericParametre);
+                        setRegister(firstParametre, secondNumericParametre);
 		else
 		{
 			printf("\n\t\t    INS\t\t   LOCALS\t    OUTS\t  GLOBALS\n\n");
@@ -603,6 +604,33 @@ int processSimulatorCommand(char* simulatorCommand)
 	}
 	
     	
+        // [f]loat
+        if(!(strcmp(command, "float") && strcmp(command, "f")))
+	{
+		char* registerValue;
+		char sparcRegister[4];
+		unsigned short count;
+                sparcRegister[0] = 'f';
+		sparcRegister[3] = '\0';
+
+		registerValue = displayRegister(getRegister("fsr"));
+                printf("\n\tfsr: \t %s\n\n", registerValue);
+                free(registerValue);
+			
+                for(count = 0; count < 32; count++)
+                {
+                        sparcRegister[1] = (count / 10) + '0';
+                        sparcRegister[2] = (count % 10) + '0';
+                        registerValue = displayRegister(getRegister(sparcRegister));
+                        printf("\tf%02d:\t %s\n", count, registerValue);
+                        free(registerValue);
+                }
+                printf("\n\n");
+                
+		return RET_SUCCESS;
+	}
+        
+        
 	// [d]is
 	if(!(strcmp(command, "dis") && strcmp(command, "d")))
 	{

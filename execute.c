@@ -404,7 +404,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 + reg_or_imm;
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCAddSubtract(regRS1, reg_or_imm, regRD);
 	}
         
         else
@@ -419,7 +419,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 + reg_or_imm + psr.c;
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCAddSubtract(regRS1, reg_or_imm, regRD);
 	}
         
 	else
@@ -431,7 +431,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 - reg_or_imm;
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCAddSubtract(regRS1, reg_or_imm, regRD);
 	}
 
         else
@@ -446,7 +446,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 - reg_or_imm - psr.c;
 		setRegister(tokens[3], regRD);
-		updateICC(regRS1, reg_or_imm, regRD);
+		updateICCAddSubtract(regRS1, reg_or_imm, regRD);
 	}
         
 	else
@@ -599,6 +599,10 @@ int executeInstruction(char* disassembledInstruction)
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "srl")))
 		setRegister(tokens[3], regRS1 >> reg_or_imm);
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sra")))
+            setRegister(tokens[3], (regRS1 >> reg_or_imm) | (getBit(regRS1, 31) ? (0xFFFFFFFF << (32 - reg_or_imm)) : 0x00000000));
 
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "save")))
@@ -618,6 +622,10 @@ int executeInstruction(char* disassembledInstruction)
 			setRegister(tokens[3], regRS1 + reg_or_imm);
 	}
 	
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "rd")))
+                setRegister(tokens[2], getRegister(tokens[1]));
+        
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "wr")))
 		setRegister(tokens[3], regRS1 ^ reg_or_imm);
@@ -669,7 +677,7 @@ unsigned long getAddressValue(char tokens[][20], unsigned short* index)
 
 
 
-void updateICC(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD)
+void updateICCAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD)
 {
 	/* Disambiguation between CARRY and OVERFLOW flag:
 	   1. http://teaching.idallen.com/dat2343/10f/notes/040_overflow.txt
