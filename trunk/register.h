@@ -29,9 +29,6 @@
 #define GLOBAL_REGISTERS       		 	 8
 
 
-unsigned short isLittleEndian;
-
-
 
 struct processor_status_register
 {
@@ -55,6 +52,24 @@ struct processor_status_register
 
 
 
+struct floating_pont_state_register
+{
+	unsigned int cexc:5;
+	unsigned int aexc:5;
+	unsigned int fcc:2;
+	unsigned int ulow:1;
+	unsigned int qne:1;
+	unsigned int ftt:3;
+	unsigned int ver:3;
+	unsigned int res:2;
+	unsigned int ns:1;
+	unsigned int tem:5;
+	unsigned int uhigh:2;
+	unsigned int rd:2;
+}__attribute__ ((__packed__));
+
+
+
 struct registers
 {
        unsigned long* registerSet;
@@ -62,6 +77,7 @@ struct registers
        unsigned long* cwptr;
        unsigned long wim, tbr, y, pc, npc;
        unsigned long asrRegisters[32];
+       unsigned long floatingPointRegisters[32];
        unsigned short registerWindows;
        
        /* Though Intel x86 architecture allows un-aligned memory access, SPARC mandates memory accesses to be 8 byte aligned.
@@ -72,6 +88,7 @@ struct registers
         https://groups.google.com/forum/?fromgroups=#!topic/comp.unix.solaris/8SgFiMudGL4 */
        
        struct processor_status_register __attribute__ ((aligned (8))) psr;
+       struct floating_pont_state_register __attribute__ ((aligned (8))) fsr;
 }__attribute__ ((__packed__));
 
 

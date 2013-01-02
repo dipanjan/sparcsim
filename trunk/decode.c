@@ -177,7 +177,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
             simm13 = sign_extended_simm13;
 			
 			// op = 3
-			if(op == 3)
+                        if(op == 3)
 			{
 				switch(op3)
 				{
@@ -229,7 +229,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				{
 					strcpy(disassembledInstruction, opcode);
 					strcat(disassembledInstruction, " [ ");
-					address = getAddress(rs1, rs2, i, simm13, 2);
+					address = getAddress(rs1, rs2, i, simm13, 1);
 					strcat(disassembledInstruction, address);
 					strcat(disassembledInstruction, " ], ");
 					if(fsr == 1)
@@ -441,6 +441,46 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 				}
 				
 				
+                                switch(op3)
+				{
+					// B.28. Read State Register Instructions
+					case 0b101000: opcode = "rd"; break;
+					case 0b101001: opcode = "rd"; break;
+					case 0b101010: opcode = "rd"; break;
+					case 0b101011: opcode = "rd"; break;
+				}
+
+				if(opcode != NULL)
+				{
+					strcpy(disassembledInstruction, opcode);
+					strcat(disassembledInstruction, " ");
+                                        
+                                        switch(op3)
+					{
+						case 0b101000: 
+                                                {
+                                                    if(rs1 == 0)    // op3 == 0x28 is implicit in case being 0b101000
+                                                        strcat(disassembledInstruction, "%y"); 
+                                                    else
+                                                    {
+                                                        char* asrRegister = (char*)malloc(3);
+                                                        strcat(disassembledInstruction, "%asr");
+                                                        sprintf(asrRegister, "%ld", rs1);
+                                                        strcat(disassembledInstruction, asrRegister); 
+                                                    }
+                                                    break;
+                                                }
+						case 0b101001: strcat(disassembledInstruction, "%psr"); break;
+						case 0b101010: strcat(disassembledInstruction, "%wim"); break;
+						case 0b101011: strcat(disassembledInstruction, "%tbr"); break;
+					}
+                                        
+					strcat(disassembledInstruction, ", ");
+                                        strcat(disassembledInstruction, getIntegerRegisterName(rd));
+					opcode = NULL;
+				}
+
+                                
 				switch(op3)
 				{
 					// B.29. Write State Register Instructions

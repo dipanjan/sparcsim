@@ -35,6 +35,20 @@ void initializeRegisters()
 	sparcRegisters.psr.n = 0;
 	sparcRegisters.psr.ver = 3;
 	sparcRegisters.psr.impl = 0xF;
+        
+        // Initialize fsr
+        sparcRegisters.fsr.cexc = 0;
+        sparcRegisters.fsr.aexc = 0;
+        sparcRegisters.fsr.fcc = 0;
+        sparcRegisters.fsr.ulow = 0;
+        sparcRegisters.fsr.qne = 0;
+        sparcRegisters.fsr.ftt = 0;
+        sparcRegisters.fsr.ver = 0;
+        sparcRegisters.fsr.res = 0;
+        sparcRegisters.fsr.ns = 0;        
+        sparcRegisters.fsr.tem = 0;
+        sparcRegisters.fsr.uhigh = 0;
+        sparcRegisters.fsr.rd = 0;
 
 	// Initialize wim, tbr, y, pc, npc
 	sparcRegisters.wim = 0;
@@ -54,6 +68,10 @@ void initializeRegisters()
         // Initialize ASR
 	for(count = 0; count < 32; count++)
 	sparcRegisters.asrRegisters[count] = 0;
+        
+        // Initialize floating point registers
+	for(count = 0; count < 32; count++)
+	sparcRegisters.floatingPointRegisters[count] = 0;
 }
 
 
@@ -106,14 +124,22 @@ unsigned long* getWindowPointer(int direction)
 unsigned long getRegister(char* sparcRegister)
 {
 	char registerType;
-	unsigned short registerIndex;
+	unsigned short registerIndex, charIndex = 0;
 	unsigned long* previousWindowPointer = getWindowPointer(-1);
 	
-	if(!(strcmp(sparcRegister, "g0") && (strcmp(sparcRegister, "%g0"))))
-		return 0;
+        // Strip off leading % symbol, if present
+        if(sparcRegister[0] == '%')
+        {
+            while(sparcRegister[charIndex++])
+                sparcRegister[charIndex - 1] = sparcRegister[charIndex];
+            sparcRegister[charIndex - 2] = '\0'; 
+        }
+        
+	if(!(strcmp(sparcRegister, "g0")))
+                return 0;
 
 	if(!strcmp(sparcRegister, "psr")) 
-            return castPSRToUnsignedLong(sparcRegisters.psr);
+                return castPSRToUnsignedLong(sparcRegisters.psr);
 		
 	if(!strcmp(sparcRegister, "wim"))
 		return sparcRegisters.wim;
@@ -129,19 +155,27 @@ unsigned long getRegister(char* sparcRegister)
 		
 	if(!strcmp(sparcRegister, "npc"))
 		return sparcRegisters.npc;
+        
+        if((sparcRegister[0] == 'a') && (sparcRegister[1] == 's') && (sparcRegister[2] == 'r'))
+        {
+            char* asrRegister = (char*)malloc(3);
+            charIndex = 0;
+            if(sparcRegister[3] >= '0' && sparcRegister[3] <= '9')
+                asrRegister[charIndex++] = sparcRegister[3];
+            if(sparcRegister[4] >= '0' && sparcRegister[4] <= '9')
+                asrRegister[charIndex++] = sparcRegister[4];
+            asrRegister[charIndex] = '\0';
+            
+            registerIndex = strtoul(asrRegister, NULL, 0);
+            return sparcRegisters.asrRegisters[registerIndex]; 
+        }
 	
-	// Preceding % sign is present
-	if(strlen(sparcRegister) == 3)
-	{
-		registerType = sparcRegister[1];
-		registerIndex = sparcRegister[2] - '0';
-	}
-	else
-	{
-		registerType = sparcRegister[0];
-		registerIndex = sparcRegister[1] - '0';
-	}
-	
+        
+        registerType = sparcRegister[0];
+	registerIndex = sparcRegister[1] - '0';
+        if(sparcRegister[2] != '\0')
+            registerIndex = registerIndex * 10 +  (sparcRegister[2] - '0');
+        
 	switch (registerType)
 	{
 	case 'o':
@@ -152,6 +186,8 @@ unsigned long getRegister(char* sparcRegister)
 		return *(sparcRegisters.cwptr + registerIndex);
 	case 'g':
 		return *(sparcRegisters.globalRegisters + registerIndex);
+        case 'f':
+                return sparcRegisters.floatingPointRegisters[registerIndex];
 	}
 	return 0;
 }
@@ -208,13 +244,15 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
             asrRegister[charIndex] = '\0';
             
             registerIndex = strtoul(asrRegister, NULL, 0);
-            sparcRegisters.asrRegisters[registerIndex] = registerValue; return;
+            sparcRegisters.asrRegisters[registerIndex] = registerValue; 
+            return;
         }
 
         
         registerType = sparcRegister[0];
 	registerIndex = sparcRegister[1] - '0';
-	
+        if(sparcRegister[2] != '\0')
+            registerIndex = registerIndex * 10 +  (sparcRegister[2] - '0');
 	
 	switch (registerType)
 	{
@@ -229,6 +267,9 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
 		break;
 	case 'g':
 		*(sparcRegisters.globalRegisters + registerIndex) = registerValue;
+		break;
+        case 'f':
+		sparcRegisters.floatingPointRegisters[registerIndex]= registerValue;
 		break;
 	}
 }
