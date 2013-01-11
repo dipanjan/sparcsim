@@ -522,6 +522,90 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 					opcode = NULL;
 				}
 
+                                
+                                switch(op3)
+				{
+					// B.33. Floating point operate (FPop) Instructions
+					case 0b110100:  // Fpop1
+                                        {
+                                            switch(opf)
+                                            {
+                                                case 0b001000001: opcode = "fadds"; break;
+                                                case 0b001000010: opcode = "faddd"; break;
+                                                case 0b001000101: opcode = "fsubs"; break;
+                                                case 0b001000110: opcode = "fsubd"; break;
+                                                case 0b001001001: opcode = "fmuls"; break;
+                                                case 0b001001010: opcode = "fmuld"; break;
+                                                case 0b001001101: opcode = "fdivs"; break;
+                                                case 0b001001110: opcode = "fdivd"; break;
+                                            }
+                                            
+                                            if(opcode != NULL)
+                                            {
+                                                    strcpy(disassembledInstruction, opcode);
+                                                    strcat(disassembledInstruction, " ");
+                                                    strcat(disassembledInstruction, getFloatingRegisterName(rs1));
+                                                    strcat(disassembledInstruction, ", ");
+                                                    strcat(disassembledInstruction, getFloatingRegisterName(rs2));
+                                                    strcat(disassembledInstruction, ", ");
+                                                    strcat(disassembledInstruction, getFloatingRegisterName(rd));
+                                                    opcode = NULL;
+                                            }
+                                            
+                                            
+                                            switch(opf)
+                                            {
+                                                case 0b000000001: opcode = "fmovs"; break;
+                                                case 0b000000101: opcode = "fnegs"; break;
+                                                case 0b000001001: opcode = "fabss"; break;
+                                                case 0b011010001: opcode = "fstoi"; break;
+                                                case 0b011010010: opcode = "fdtoi"; break;
+                                                case 0b011001001: opcode = "fstod"; break;
+                                                case 0b011000110: opcode = "fdtos"; break;
+                                                case 0b011000100: opcode = "fitos"; break;
+                                                case 0b011001000: opcode = "fitod"; break;
+                                                case 0b000101001: opcode = "fsqrts"; break;
+                                                case 0b000101010: opcode = "fsqrtd"; break;
+                                            }
+                                            
+                                            if(opcode != NULL)
+                                            {
+                                                    strcpy(disassembledInstruction, opcode);
+                                                    strcat(disassembledInstruction, " ");
+                                                    strcat(disassembledInstruction, getFloatingRegisterName(rs2));
+                                                    strcat(disassembledInstruction, ", ");
+                                                    strcat(disassembledInstruction, getFloatingRegisterName(rd));
+                                                    opcode = NULL;
+                                            }
+                                            
+                                            break;
+                                        }
+                                        
+                                        
+					case 0b110101:  // FPop2
+                                        {       
+                                            switch(opf)
+                                            {
+                                                case 0b001010001: opcode = "fcmps"; break;
+                                                case 0b001010010: opcode = "fcmpd"; break;
+                                                case 0b001010101: opcode = "fcmpes"; break;
+                                                case 0b001010110: opcode = "fcmped"; break;
+                                            }
+                                            
+                                            if(opcode != NULL)
+                                            {
+                                                    strcpy(disassembledInstruction, opcode);
+                                                    strcat(disassembledInstruction, " ");
+                                                    strcat(disassembledInstruction, getFloatingRegisterName(rs1));
+                                                    strcat(disassembledInstruction, ", ");
+                                                    strcat(disassembledInstruction, getFloatingRegisterName(rs2));
+                                                    opcode = NULL;
+                                            }
+                                            
+                                            break;
+                                        }
+				}
+
 
 				switch(op3)
 				{

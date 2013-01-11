@@ -13,15 +13,37 @@ long findByToken(char* token)
 		return FILE_DOES_NOT_EXIST_ERROR;
 	
 	while(fgets(buffer, 50, handle))
-		if(!strcasecmp(token, strtok(buffer, delimiter)))
-		{
-			tokenValue = atol(strtok(NULL, delimiter));
-			break;
-		}
+        if(!strcasecmp(token, strtok(buffer, delimiter)))
+        {
+                tokenValue = atol(strtok(NULL, delimiter));
+                break;
+        }
 
 	free(buffer);
 	fclose(handle);
 	return tokenValue;
+}
+
+
+
+char* trim(char* stringToBeTrimmed)
+{
+    // The string to be trimmed must be writable, i.e. NOT a string literal, otherwise it will seg-fault
+    
+    unsigned short characterIndex = 0, leadingNonWhiteSpaceCharacterIndex = 0, isLeadingNonWhiteSpaceCharacterFound = 0;
+    
+    while((characterIndex < strlen(stringToBeTrimmed)) && (stringToBeTrimmed[characterIndex] != '\0') && (stringToBeTrimmed[characterIndex] != '#'))
+    {
+        if(((stringToBeTrimmed[characterIndex] == ' ' || stringToBeTrimmed[characterIndex] == '\t' || stringToBeTrimmed[characterIndex] == '\n')) && (isLeadingNonWhiteSpaceCharacterFound == 0))
+            leadingNonWhiteSpaceCharacterIndex++;
+        else
+            isLeadingNonWhiteSpaceCharacterFound = 1;
+        
+        characterIndex++;
+    }
+    
+    stringToBeTrimmed[characterIndex] = '\0';
+    return (stringToBeTrimmed + leadingNonWhiteSpaceCharacterIndex);
 }
 
 

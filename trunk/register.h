@@ -52,7 +52,7 @@ struct processor_status_register
 
 
 
-struct floating_pont_state_register
+struct floating_point_state_register
 {
 	unsigned int cexc:5;
 	unsigned int aexc:5;
@@ -88,7 +88,7 @@ struct registers
         https://groups.google.com/forum/?fromgroups=#!topic/comp.unix.solaris/8SgFiMudGL4 */
        
        struct processor_status_register __attribute__ ((aligned (8))) psr;
-       struct floating_pont_state_register __attribute__ ((aligned (8))) fsr;
+       struct floating_point_state_register __attribute__ ((aligned (8))) fsr;
 }__attribute__ ((__packed__));
 
 
@@ -103,6 +103,8 @@ int saveRegisters();
 int restoreRegisters();
 unsigned long castPSRToUnsignedLong(struct processor_status_register psr);
 struct processor_status_register castUnsignedLongToPSR(unsigned long registerValue);
+struct floating_point_state_register castUnsignedLongToFSR(unsigned long registerValue);
+unsigned long castFSRToUnsignedLong(struct floating_point_state_register fsr);
 char* getNextRegister(char* sparcRegister);
 
 #endif

@@ -75,28 +75,35 @@ int main(int argc, char* argv[])
 
 int processSimulatorCommand(char* simulatorCommand)
 {
-	char* command = NULL, *firstParametre = NULL, *secondParametre = NULL, *arguments = (char*)malloc(50);
+	char* command = NULL, *firstParametre = NULL, *secondParametre = NULL, *arguments = (char*)malloc(200);
 	unsigned long firstNumericParametre = 0, secondNumericParametre = 0;
+        unsigned short count = 0;
 	static unsigned long lastEncounteredBreakPoint = 0;
 	static short isLastEncounteredBreakPointValid = 0;
-	const char delimiters[] = " \n";
+	const char delimiters[] = " \n\t";
 	char* hexNumber = (char*)malloc(32);
+        char* batchCommand = (char*)malloc(32);
 	
+        // Strip off #
+        for(count = 0; count < strlen(simulatorCommand); count++)
+            if(simulatorCommand[count] == '#')
+                simulatorCommand[count] = '\0';
+        
 	strcpy(arguments, simulatorCommand);
 	command = strtok(simulatorCommand, delimiters);
 	if(!command)
-		return RET_FAILURE;
+		return RET_NOTACOMMAND;
 	firstParametre = strtok(NULL, delimiters);
 	if(firstParametre != NULL)
 	{
 		secondParametre = strtok(NULL, delimiters);
 		firstNumericParametre = strtoul(firstParametre, NULL, 0);
-    }
+        }
 	if(secondParametre != NULL)
 	{
 		while(strtok(NULL, delimiters));
 		secondNumericParametre = strtoul(secondParametre, NULL, 0);
-    }
+        }
 	
 	
 	// Quit
@@ -145,7 +152,7 @@ int processSimulatorCommand(char* simulatorCommand)
 	// [ba]tch
 	if(!(strcmp(command, "batch") && strcmp(command, "ba")))
 	{
-		if(firstParametre == NULL)
+            if(firstParametre == NULL)
 			return RET_FAILURE;
 		else
 		{
@@ -167,12 +174,13 @@ int processSimulatorCommand(char* simulatorCommand)
 				buffer[bufferIndex] = '\0';
 				
 				if(!buffer || !strlen(buffer))
-					continue;
+                                        continue;
 
-				printf("sparcsim>%s\n", buffer);
+                                strcpy(batchCommand, buffer);
 				switch(processSimulatorCommand(buffer))
 				{
-					case RET_FAILURE: printf("Error executing command\n"); return RET_FAILURE;
+                                        case RET_SUCCESS: printf("sparcsim>%s\n", trim(batchCommand)); break;
+                                        case RET_FAILURE: printf("sparcsim>Error executing command: %s\n", trim(batchCommand)); return RET_FAILURE;
 					case RET_QUIT: return RET_QUIT;
 				}					
 			}		
@@ -342,10 +350,9 @@ int processSimulatorCommand(char* simulatorCommand)
 				}
 				cpuInstruction = readWordAsString(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-				exitCode = executeInstruction(disassembledInstruction);
+				exitCode = executeInstruction(disassembledInstruction); //printf("%d) disassembledInstruction: %s\n", instructionCount, disassembledInstruction);
 				free(cpuInstruction);
 				free(disassembledInstruction);
-				instructionCount++;
 			}
 		}
 
@@ -363,9 +370,14 @@ int processSimulatorCommand(char* simulatorCommand)
 
 		if(!firstParametre)
 			return RET_FAILURE;
-
+                
+                // Initializing execution environment
 		setRegister("pc", firstNumericParametre);
                 setRegister("npc", firstNumericParametre + 4);
+                setRegister("i6", 0x40400000);
+                setRegister("o6", 0x403FFE80);
+                setRegister("wim", 0x0000002);
+                setRegister("psr", 0xF30010E0);
 
 		if(!secondParametre)
 		{
@@ -402,9 +414,8 @@ int processSimulatorCommand(char* simulatorCommand)
 	if(!(strcmp(command, "run") && strcmp(command, "ru")))
 	{
 		char* cpuInstruction, *disassembledInstruction;
-		unsigned long regPC, nextBreakPoint;
+		unsigned long regPC;
 		int exitCode, instructionCount;
-		unsigned short isReset;
 
 		setRegister("pc", 0);
                 setRegister("npc", 4);
@@ -415,7 +426,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			{
 				regPC = getRegister("pc");
 				cpuInstruction = readWordAsString(regPC);
-				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+				disassembledInstruction = decodeInstruction(cpuInstruction, regPC); //printf("%s %s\n", cpuInstruction, disassembledInstruction);
 				exitCode = executeInstruction(disassembledInstruction);
 				free(cpuInstruction);
 				free(disassembledInstruction);
@@ -614,15 +625,31 @@ int processSimulatorCommand(char* simulatorCommand)
 		sparcRegister[3] = '\0';
 
 		registerValue = displayRegister(getRegister("fsr"));
-                printf("\n\tfsr: \t %s\n\n", registerValue);
+                printf("\n\tfsr: \t%s\n\n", registerValue);
                 free(registerValue);
 			
                 for(count = 0; count < 32; count++)
                 {
                         sparcRegister[1] = (count / 10) + '0';
                         sparcRegister[2] = (count % 10) + '0';
-                        registerValue = displayRegister(getRegister(sparcRegister));
-                        printf("\tf%02d:\t %s\n", count, registerValue);
+                        
+                        // Hex to single precision floating-point conversion
+                        convertFloat.floatToHex = getRegister(sparcRegister);
+                        
+                        // Hex to double precision floating-point conversion
+                        if(count % 2 == 0)
+                        {
+                            convertDouble.doubleToHex[0] = convertFloat.floatToHex;
+                            convertDouble.doubleToHex[1] = getRegister(getNextRegister(sparcRegister));
+                        }
+                        else
+                            convertDouble.hexToDouble = 0;
+                            
+                        registerValue = displayRegister(convertFloat.floatToHex);
+                        if(count % 2 == 0)
+                            printf("\tf%02d:\t%s\t%13E\t%13lE\n", count, registerValue, convertFloat.hexToFloat, convertDouble.hexToDouble);
+                        else
+                            printf("\tf%02d:\t%s\t%13E\n", count, registerValue, convertFloat.hexToFloat);
                         free(registerValue);
                 }
                 printf("\n\n");

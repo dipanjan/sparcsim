@@ -52,7 +52,7 @@
       </toolsSet>
       <compileType>
         <cTool>
-          <commandlineTool>cc</commandlineTool>
+          <commandlineTool>gcc</commandlineTool>
           <incDir>
             <pElem>.</pElem>
             <pElem>.</pElem>
@@ -132,7 +132,7 @@
           <incDir>
             <pElem>.</pElem>
           </incDir>
-          <commandLine>-I. -I /usr/local/include/</commandLine>
+          <commandLine>-I. -I /usr/local/include/ -g -ggdb -O0</commandLine>
         </cTool>
         <ccTool>
           <developmentMode>0</developmentMode>
@@ -152,7 +152,7 @@
         <linkerTool>
           <output>/home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc/sparcsim</output>
           <commandlineTool>gcc</commandlineTool>
-          <commandLine>-lelf</commandLine>
+          <commandLine>-lelf -lm</commandLine>
         </linkerTool>
       </compileType>
     </conf>

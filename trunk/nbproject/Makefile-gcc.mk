@@ -47,7 +47,7 @@ OBJECTFILES= \
 
 
 # C Compiler Flags
-CFLAGS=-I. -I /usr/local/include/
+CFLAGS=-I. -I /usr/local/include/ -g -ggdb -O0
 
 # CC Compiler Flags
 CCFLAGS=
@@ -68,7 +68,7 @@ LDLIBSOPTIONS=
 
 /home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc/sparcsim: ${OBJECTFILES}
 	${MKDIR} -p /home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc
-	gcc -lelf -o /home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc/sparcsim ${OBJECTFILES} ${LDLIBSOPTIONS} 
+	gcc -lelf -lm -o /home/Dip/Workspace/sparcsim/dist/gcc/GNU-Solaris-Sparc/sparcsim ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
 ${OBJECTDIR}/loader.o: loader.c 
 	${MKDIR} -p ${OBJECTDIR}

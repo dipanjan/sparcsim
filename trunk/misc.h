@@ -9,5 +9,6 @@
 
 
 long findByToken(char* token);
+char* trim(char* stringToBeTrimmed);
 
 #endif

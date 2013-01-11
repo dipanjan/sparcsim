@@ -123,10 +123,18 @@ unsigned long* getWindowPointer(int direction)
 
 unsigned long getRegister(char* sparcRegister)
 {
-	char registerType;
+	char registerType, sparcRegisterString[6];
 	unsigned short registerIndex, charIndex = 0;
 	unsigned long* previousWindowPointer = getWindowPointer(-1);
 	
+        /* 
+         Register name is copied to a temporary variable to avoid segmentation fault.
+         gcc core dump analysis shows that it faults while trying to modify a string literal
+         from an invocation like setRegister("%o7", registerValue) from CALL type instruction 
+        */
+        strcpy(sparcRegisterString, sparcRegister); 
+        sparcRegister = sparcRegisterString;
+        
         // Strip off leading % symbol, if present
         if(sparcRegister[0] == '%')
         {
@@ -140,6 +148,9 @@ unsigned long getRegister(char* sparcRegister)
 
 	if(!strcmp(sparcRegister, "psr")) 
                 return castPSRToUnsignedLong(sparcRegisters.psr);
+        
+        if(!strcmp(sparcRegister, "fsr")) 
+                return castFSRToUnsignedLong(sparcRegisters.fsr);
 		
 	if(!strcmp(sparcRegister, "wim"))
 		return sparcRegisters.wim;
@@ -196,10 +207,18 @@ unsigned long getRegister(char* sparcRegister)
 
 void setRegister(char* sparcRegister, unsigned long registerValue)
 {
-	char registerType;
+	char registerType, sparcRegisterString[6];
 	unsigned short registerIndex, charIndex = 0;
 	unsigned long* previousWindowPointer = getWindowPointer(-1);
 	
+        /* 
+         Register name is copied to a temporary variable to avoid segmentation fault.
+         gcc core dump analysis shows that it faults while trying to modify a string literal
+         from an invocation like setRegister("%o7", registerValue) from CALL type instruction 
+        */
+        strcpy(sparcRegisterString, sparcRegister); 
+        sparcRegister = sparcRegisterString;
+        
         // Strip off leading % symbol, if present
         if(sparcRegister[0] == '%')
         {
@@ -217,6 +236,9 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
                 sparcRegisters.cwptr = sparcRegisters.registerSet + sparcRegisters.psr.cwp * REGISTER_WINDOW_WIDTH;
 		//sparcRegisters.cwptr = sparcRegisters.registerSet + (sparcRegisters.psr.cwp - 1) * REGISTER_WINDOW_WIDTH;
 	}
+        
+        if(!strcmp(sparcRegister, "fsr"))
+                sparcRegisters.fsr = castUnsignedLongToFSR(registerValue);
 		
 	if(!strcmp(sparcRegister, "wim"))
 		sparcRegisters.wim = registerValue;
@@ -316,7 +338,6 @@ int restoreRegisters()
 	short nextCWP;
 
 	regPSR = getRegister("psr");
-	//psr = FORCE_CAST(regPSR, struct processor_status_register);
         psr = castUnsignedLongToPSR(regPSR);
 	regWIM = getRegister("wim");
 
@@ -392,14 +413,71 @@ unsigned long castPSRToUnsignedLong(struct processor_status_register psr)
 
 
 
+struct floating_point_state_register castUnsignedLongToFSR(unsigned long registerValue)
+{
+	struct floating_point_state_register fsr;
+        
+        fsr.cexc = registerValue & 0x0000001F;
+        fsr.aexc = (registerValue & 0x000003E0) >> 5;
+        fsr.fcc = (registerValue & 0x00000C00) >> 10;
+        fsr.ulow = (registerValue & 0x00001000) >> 12;
+        fsr.qne = (registerValue & 0x00002000) >> 13;
+        fsr.ftt = (registerValue & 0x0001C000) >> 14;
+        fsr.ver = (registerValue & 0x000E0000) >> 17;
+        fsr.res = (registerValue & 0x00300000) >> 20;
+        fsr.ns = (registerValue & 0x00400000) >> 22;
+        fsr.tem = (registerValue & 0x0F100000) >> 23;
+        fsr.uhigh = (registerValue & 0x30000000) >> 28;
+        fsr.rd = (registerValue & 0xC0000000) >> 30;
+
+	return fsr;
+}
+
+
+
+unsigned long castFSRToUnsignedLong(struct floating_point_state_register fsr)
+{
+	unsigned long registerValue = 0;
+
+	registerValue = registerValue | fsr.cexc;
+	registerValue = registerValue | (fsr.aexc << 5);
+	registerValue = registerValue | (fsr.fcc << 10);
+	registerValue = registerValue | (fsr.ulow << 12);
+	registerValue = registerValue | (fsr.qne << 13);
+	registerValue = registerValue | (fsr.ftt << 14);
+	registerValue = registerValue | (fsr.ver << 17);
+	registerValue = registerValue | (fsr.res << 20);
+	registerValue = registerValue | (fsr.ns << 22);
+	registerValue = registerValue | (fsr.tem << 23);
+	registerValue = registerValue | (fsr.uhigh << 28);
+	registerValue = registerValue | (fsr.rd << 30);	
+
+	return registerValue;
+}
+
+
+
 char* getNextRegister(char* sparcRegister)
 {
-    char registerType;
-    unsigned short nextRegisterIndex;
+    char registerType, nextRegister[6];
+    unsigned short nextRegisterIndex, characterCount = 2; // Because register name will be at least two character long, e.g. g5
+    
+    // Copy the register name to prevent alteration of actual register
+    strcpy(nextRegister, sparcRegister);
+    sparcRegister = nextRegister;
     
     registerType = sparcRegister[0];
-    nextRegisterIndex = (sparcRegister[1] - '0') + 1;
-    sparcRegister[1] = nextRegisterIndex + '0';
+    nextRegisterIndex = sparcRegister[1] - '0';
+    if(sparcRegister[2] != '\0')
+        nextRegisterIndex = nextRegisterIndex * 10 +  (sparcRegister[2] - '0');
+    nextRegisterIndex++;
+    sparcRegister[1] = nextRegisterIndex / 10 + '0';
+    if(nextRegisterIndex % 10 != 0)
+    {
+        sparcRegister[characterCount] = nextRegisterIndex % 10 + '0';
+        characterCount++;
+    }
+    sparcRegister[characterCount] = '\0';
     
     return sparcRegister;
 }
