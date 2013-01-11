@@ -1,6 +1,4 @@
 
-clear
-
 gcc -c memory.c -o memory.o -I.
 gcc -c loader.c -o loader.o -I.
 gcc -c bits.c -o bits.o -I.
@@ -12,6 +10,6 @@ gcc -c breakpoint.c -o breakpoint.o -I.
 gcc -c trap.c -o trap.o -I.
 gcc -c simulator.c -o simulator.o -I.
 
-gcc loader.o memory.o decode.o register.o bits.o misc.o execute.o breakpoint.o trap.o simulator.o -o sparcsim -lelf
+gcc loader.o memory.o decode.o register.o bits.o misc.o execute.o breakpoint.o trap.o simulator.o -o sparcsim -lelf -lm
 
 rm -f *.o

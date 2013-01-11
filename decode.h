@@ -9,7 +9,6 @@
 
 
 char* decodeInstruction(char* cpuInstruction, unsigned long regPC);
-//char* decodeSyntheticInstruction(char* disassembledInstruction);
 char* getIntegerRegisterName(unsigned long registerIdentifier);
 char* getFloatingRegisterName(unsigned long registerIdentifier);
 char* getCoProcessorRegisterName(unsigned long registerIdentifier);
