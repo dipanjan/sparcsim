@@ -230,6 +230,13 @@ void displayMemoryArea(unsigned long memoryAddress, int count)
 
 
 
+unsigned long wordAlign(unsigned long memoryAddress)
+{
+    return ((unsigned long)(memoryAddress / 4)) * 4;
+}
+
+
+
 /*void main()
 {
 	initializeMemory();
