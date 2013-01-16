@@ -14,7 +14,7 @@ void initializeBreakPointList()
 
 
 
-int addBreakPoint(unsigned long memoryAddress)
+int addBreakPoint(unsigned long memoryAddress, unsigned short breakPointType)
 {
 	struct breakPoint* prevBreakPoint, *curBreakPoint, *nextBreakPoint, *newBreakPoint;
 
@@ -50,8 +50,9 @@ int addBreakPoint(unsigned long memoryAddress)
 	}
 
 	breakPointSerial++;
+        curBreakPoint->breakPointSerial = breakPointSerial;
 	curBreakPoint->memoryAddress = memoryAddress;
-	curBreakPoint->breakPointSerial = breakPointSerial;
+        curBreakPoint->breakPointType = breakPointType;
 	curBreakPoint->nextBreakPoint = NULL;
 
 	return RET_SUCCESS;
@@ -126,6 +127,7 @@ struct breakPoint* getBreakPoint(unsigned short isReset)
 }
 
 
+
 int isBreakPoint(unsigned long regPC)
 {
 	struct breakPoint* prevBreakPoint, *curBreakPoint;
@@ -135,7 +137,7 @@ int isBreakPoint(unsigned long regPC)
 
 	while(curBreakPoint)
 	{
-		if(prevBreakPoint->memoryAddress == regPC)
+		if(curBreakPoint->memoryAddress == regPC)
 			return 1;
 		prevBreakPoint = curBreakPoint;
 		curBreakPoint = curBreakPoint->nextBreakPoint;

@@ -130,6 +130,7 @@ int processSimulatorCommand(char* simulatorCommand)
                 printf("\t[f]loat                     |  print the FPU registers\n");
 		printf("\t[d]is [addr] [count]        |  disassemble [count] instructions at address [addr]\n");
 		printf("\t[c]ont [cnt]                |  continue execution for [cnt] instructions\n");
+                printf("\t[wa]tch <addr]>             |  add a watchpoint at <addr>\n");
 		printf("\t[g]o <addr> [cnt]           |  start execution at <addr>\n");
 		printf("\t[ru]n [cnt]                 |  reset and start execution at address zero\n");
 		printf("\t[h]elp                      |  display this help\n");
@@ -338,19 +339,19 @@ int processSimulatorCommand(char* simulatorCommand)
 				regPC = getRegister("pc");
 				if(isBreakPoint(regPC))
 				{
-					if((regPC == lastEncounteredBreakPoint) && isLastEncounteredBreakPointValid && !instructionCount)
-						isLastEncounteredBreakPointValid = 0;
-					else
-					{
-						lastEncounteredBreakPoint = regPC;
-						isLastEncounteredBreakPointValid = 1;
-						printf("Breaking at: 0x%lX after executing %d instructions\n", regPC, instructionCount);
-						return RET_SUCCESS;
-					}
+                                    if((regPC == lastEncounteredBreakPoint) && isLastEncounteredBreakPointValid && !instructionCount)
+                                            isLastEncounteredBreakPointValid = 0;
+                                    else
+                                    {
+                                            lastEncounteredBreakPoint = regPC;
+                                            isLastEncounteredBreakPointValid = 1;
+                                            printf("Breaking at: 0x%lX after executing %d instructions\n", regPC, instructionCount);
+                                            return RET_SUCCESS;
+                                    }
 				}
 				cpuInstruction = readWordAsString(regPC);
 				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-				exitCode = executeInstruction(disassembledInstruction); //printf("%d) disassembledInstruction: %s\n", instructionCount, disassembledInstruction);
+				exitCode = executeInstruction(disassembledInstruction);
 				free(cpuInstruction);
 				free(disassembledInstruction);
 			}
@@ -458,7 +459,6 @@ int processSimulatorCommand(char* simulatorCommand)
 		if(firstParametre == NULL)
 		{
 			struct breakPoint* curBreakPoint;
-			unsigned long breakPointAddress;
 			
 			curBreakPoint = getBreakPoint(1);
 			if(!curBreakPoint)
@@ -466,23 +466,38 @@ int processSimulatorCommand(char* simulatorCommand)
 
 			do
 			{
-				printf("\n%d: 0x%lX", curBreakPoint->breakPointSerial, curBreakPoint->memoryAddress);
+                                char* breakPointType = (curBreakPoint->breakPointType == 1) ? "Breakpoint" : "Watchpoint";
+                                printf("\n%d: 0x%08lX -- %s", curBreakPoint->breakPointSerial, curBreakPoint->memoryAddress, breakPointType);
 				curBreakPoint = getBreakPoint(0);
 			}while(curBreakPoint);
 			printf("\n\n");
 		}
 		
 		else
-			if(addBreakPoint(firstNumericParametre) == BREAKPOINT_ALLOCATION_ERROR)
-			{
-				printf("ERROR: Can't allocate breakpoint\n");
-				return RET_FAILURE;
-			}
+                if(addBreakPoint(wordAlign(firstNumericParametre), 1) == BREAKPOINT_ALLOCATION_ERROR)
+                {
+                        printf("ERROR: Can't allocate breakpoint\n");
+                        return RET_FAILURE;
+                }
 			
 		return RET_SUCCESS;
 	}
 	
+        
+        // [wa]tch
+	if(!(strcmp(command, "watch") && strcmp(command, "wa")))
+	{
+		
+                if(addBreakPoint(wordAlign(firstNumericParametre), 2) == BREAKPOINT_ALLOCATION_ERROR)
+                {
+                        printf("ERROR: Can't allocate watchpoint\n");
+                        return RET_FAILURE;
+                }
+
+                return RET_SUCCESS;
+	}
 	
+        
 	// [de]l
 	if(!(strcmp(command, "del") && strcmp(command, "de")))
 	{

@@ -17,5 +17,6 @@ int writeWord(unsigned long memoryAddress, unsigned long word);
 char* readWordAsString(unsigned long memoryAddress);
 void displayWord(char* cpuInstruction, int isInstruction);
 void displayMemoryArea(unsigned long memoryAddress, int count);
+unsigned long wordAlign(unsigned long memoryAddress);
 
 #endif
