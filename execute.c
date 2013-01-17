@@ -65,7 +65,7 @@ int executeInstruction(char* disassembledInstruction)
 	// Format - II instruction
 	if(!strcmp(tokens[0], "sethi"))
 	{
-		setRegister(tokens[2], strtol(tokens[1], NULL, 0));
+		setRegister(tokens[2], strtoul(tokens[1], NULL, 0));
 		setRegister("pc", regnPC);
 		setRegister("npc", regnPC + 4);
 		return RET_SUCCESS;

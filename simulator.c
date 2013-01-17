@@ -262,16 +262,12 @@ int processSimulatorCommand(char* simulatorCommand)
 			return RET_FAILURE;
 		else
 		{
-			/*char* bytePointer = (char*)&secondNumericParametre;
-			unsigned short count;
-			for(count = 0; count < 4; count++)
-			{*/
-				switch(writeWord(firstNumericParametre, secondNumericParametre))
-				{
-					case SECOND_PAGE_TABLE_ALLOCATION_ERROR: printf("Error allocating second page table\n"); return RET_FAILURE;
-					case PAGE_ALLOCATION_ERROR: printf("Error allocating page\n"); return RET_FAILURE;
-				}
-			//}	
+
+                        switch(writeWord(firstNumericParametre, secondNumericParametre))
+                        {
+                                case SECOND_PAGE_TABLE_ALLOCATION_ERROR: printf("Error allocating second page table\n"); return RET_FAILURE;
+                                case PAGE_ALLOCATION_ERROR: printf("Error allocating page\n"); return RET_FAILURE;
+                        }
 		}
 		return RET_SUCCESS;
 	}
@@ -427,7 +423,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			{
 				regPC = getRegister("pc");
 				cpuInstruction = readWordAsString(regPC);
-				disassembledInstruction = decodeInstruction(cpuInstruction, regPC); //printf("%s %s\n", cpuInstruction, disassembledInstruction);
+				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
 				exitCode = executeInstruction(disassembledInstruction);
 				free(cpuInstruction);
 				free(disassembledInstruction);
@@ -466,7 +462,7 @@ int processSimulatorCommand(char* simulatorCommand)
 
 			do
 			{
-                                char* breakPointType = (curBreakPoint->breakPointType == 1) ? "Breakpoint" : "Watchpoint";
+                                char* breakPointType = (curBreakPoint->breakPointType == BREAK_POINT) ? "Breakpoint" : "Watchpoint";
                                 printf("\n%d: 0x%08lX -- %s", curBreakPoint->breakPointSerial, curBreakPoint->memoryAddress, breakPointType);
 				curBreakPoint = getBreakPoint(0);
 			}while(curBreakPoint);
@@ -474,7 +470,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		}
 		
 		else
-                if(addBreakPoint(wordAlign(firstNumericParametre), 1) == BREAKPOINT_ALLOCATION_ERROR)
+                if(addBreakPoint(wordAlign(firstNumericParametre), BREAK_POINT) == BREAKPOINT_ALLOCATION_ERROR)
                 {
                         printf("ERROR: Can't allocate breakpoint\n");
                         return RET_FAILURE;
@@ -488,7 +484,7 @@ int processSimulatorCommand(char* simulatorCommand)
 	if(!(strcmp(command, "watch") && strcmp(command, "wa")))
 	{
 		
-                if(addBreakPoint(wordAlign(firstNumericParametre), 2) == BREAKPOINT_ALLOCATION_ERROR)
+                if(addBreakPoint(wordAlign(firstNumericParametre), WATCH_POINT) == BREAKPOINT_ALLOCATION_ERROR)
                 {
                         printf("ERROR: Can't allocate watchpoint\n");
                         return RET_FAILURE;
