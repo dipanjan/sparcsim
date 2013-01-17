@@ -7,6 +7,11 @@
 
 
 
+#define BREAK_POINT 1
+#define WATCH_POINT 2
+
+
+
 struct breakPoint
 {
 	short breakPointSerial;

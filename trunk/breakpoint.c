@@ -4,6 +4,10 @@
 
 struct breakPoint* breakPointList = NULL;
 short breakPointSerial = 0;
+static unsigned long lastBreakPointAt = 0;
+static unsigned short isLastBreakPointEncountered = 0;
+static unsigned long lastWatchPointAt = 0;
+static unsigned short isLastWatchPointEncountered = 0;
 
 
 void initializeBreakPointList()
@@ -137,8 +141,26 @@ int isBreakPoint(unsigned long regPC)
 
 	while(curBreakPoint)
 	{
-		if(curBreakPoint->memoryAddress == regPC)
-			return 1;
+		if(curBreakPoint->memoryAddress == regPC) 
+                {
+                    if(lastBreakPointAt == regPC)
+                    {
+                        if(isLastBreakPointEncountered)
+                                isLastBreakPointEncountered = 0;
+                        else
+                        {
+                            lastBreakPointAt = regPC;
+                            isLastBreakPointEncountered = 1;
+                            return 1;
+                        }
+                    }
+                    else
+                    {
+                        lastBreakPointAt = regPC;
+                        isLastBreakPointEncountered = 1;
+                        return 1;
+                    }
+                }
 		prevBreakPoint = curBreakPoint;
 		curBreakPoint = curBreakPoint->nextBreakPoint;
 	}
