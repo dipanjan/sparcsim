@@ -49,7 +49,7 @@ int executeInstruction(char* disassembledInstruction)
 	// Format - I instruction
 	if(!strcmp(tokens[0], "call"))
 	{
-		unsigned long displacement = strtol(tokens[1], NULL, 0);
+		unsigned long displacement = strtoul(tokens[1], NULL, 0);
 		setRegister("pc", regnPC);
 		setRegister("npc", displacement);
 		setRegister("%o7", regPC);
@@ -92,7 +92,7 @@ int executeInstruction(char* disassembledInstruction)
 		if(!strcmp(tokens[1], "a"))
 		{
 			// Annul bit = 1
-			regPC = strtol(tokens[2], NULL, 0);
+			regPC = strtoul(tokens[2], NULL, 0);
 			setRegister("pc", regPC);
 			setRegister("npc", regPC + 4);
 		}
@@ -100,7 +100,7 @@ int executeInstruction(char* disassembledInstruction)
 		{
 			// Annul bit = 0
 			setRegister("pc", regnPC);
-			regnPC = strtol(tokens[1], NULL, 0);
+			regnPC = strtoul(tokens[1], NULL, 0);
 			setRegister("npc", regnPC);
 		}
 		return RET_SUCCESS;
@@ -228,7 +228,7 @@ int executeInstruction(char* disassembledInstruction)
 		if(!strcmp(tokens[1], "a"))
 		{
 			// Annul bit = 1
-			regPC = strtol(tokens[2], NULL, 0);
+			regPC = strtoul(tokens[2], NULL, 0);
 			setRegister("pc", regPC);
 			setRegister("npc", regPC + 4);
 		}
@@ -236,7 +236,7 @@ int executeInstruction(char* disassembledInstruction)
 		{
 			// Annul bit = 0
 			setRegister("pc", regnPC);
-			regnPC = strtol(tokens[1], NULL, 0);
+			regnPC = strtoul(tokens[1], NULL, 0);
 			setRegister("npc", regnPC);
 		}
 		return RET_SUCCESS;
