@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	
 	if(argc == 3)
 	{
-		if(!(strcmp(argv[1], "-b") && strcmp(argv[1], "--batch")))
+		if(!(strcmp(argv[1], "-c") && strcmp(argv[1], "--batch")))
 		{
 			sprintf(simulatorCommand, "batch %s", argv[2]);
 			if(processSimulatorCommand(simulatorCommand) == RET_QUIT)
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 
 	while(1)
 	{
-		printf("sparcsim>");
+		printf("sparcsim> ");
 		fgets(simulatorCommand, MAX_INPUT_LENGTH, stdin);
 		if(processSimulatorCommand(simulatorCommand) == RET_QUIT)
 			return RET_SUCCESS;
@@ -82,7 +82,6 @@ int processSimulatorCommand(char* simulatorCommand)
 	static short isLastEncounteredBreakPointValid = 0;
 	const char delimiters[] = " \n\t";
 	char* hexNumber = (char*)malloc(32);
-        char* batchCommand = (char*)malloc(32);
 	
         // Strip off #
         for(count = 0; count < strlen(simulatorCommand); count++)
@@ -93,6 +92,7 @@ int processSimulatorCommand(char* simulatorCommand)
 	command = strtok(simulatorCommand, delimiters);
 	if(!command)
 		return RET_NOTACOMMAND;
+        
 	firstParametre = strtok(NULL, delimiters);
 	if(firstParametre != NULL)
 	{
@@ -116,7 +116,7 @@ int processSimulatorCommand(char* simulatorCommand)
 	{
 		printf("\n\tsparcsim  [file_name]       |  load a file into simulator memory\n");
 		printf("\tsparcsim  -d [file_name]    |  disassemble SPARC ELF binary\n");
-		printf("\tsparcsim  -b [file_name]    |  execute a batch file of SPARCSIM commands\n");
+		printf("\tsparcsim  -c [file_name]    |  execute a batch file of SPARCSIM commands\n");
 		printf("\t[ba]tch <file>              |  execute a batch file of SPARCSIM commands\n");
 		printf("\t[re]set                     |  reset simulator \n");
 		printf("\t[l]oad  <file_name>         |  load a file into simulator memory\n");
@@ -169,6 +169,7 @@ int processSimulatorCommand(char* simulatorCommand)
 			while(fgets(buffer, 150, handle))
 			{
 				short bufferIndex = -1;
+                                char* trimmedCommand;
 				
 				// Stripping off trailing carriage return
 				while(buffer[++bufferIndex] != '\0' && buffer[bufferIndex] != '\r' && buffer[bufferIndex] != '\n');
@@ -177,11 +178,13 @@ int processSimulatorCommand(char* simulatorCommand)
 				if(!buffer || !strlen(buffer))
                                         continue;
 
-                                strcpy(batchCommand, buffer);
+                                trimmedCommand = trim(buffer);
+                                if(strlen(trimmedCommand))
+                                        printf("sparcsim> %s\n", trimmedCommand);
+                                        
 				switch(processSimulatorCommand(buffer))
 				{
-                                        case RET_SUCCESS: printf("sparcsim>%s\n", trim(batchCommand)); break;
-                                        case RET_FAILURE: printf("sparcsim>Error executing command: %s\n", trim(batchCommand)); return RET_FAILURE;
+                                        case RET_FAILURE: printf("          Error executing command above\n"); return RET_FAILURE;
 					case RET_QUIT: return RET_QUIT;
 				}					
 			}		
