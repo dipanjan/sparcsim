@@ -352,11 +352,9 @@ int processSimulatorCommand(char* simulatorCommand)
 	// [g]o
 	if(!(strcmp(command, "go") && strcmp(command, "g")))
 	{
-		char* cpuInstruction, *disassembledInstruction;
-		unsigned long regPC;
-		int exitCode, instructionCount;
-
-		if(!firstParametre)
+                char equivalentSimulatorCommand[50];
+                
+                if(!firstParametre)
 			return RET_FAILURE;
                 
                 // Initializing execution environment
@@ -367,33 +365,15 @@ int processSimulatorCommand(char* simulatorCommand)
                 setRegister("wim", 0x0000002);
                 setRegister("psr", 0xF30010E0);
 
-		if(!secondParametre)
-		{
-			do
-			{
-				regPC = getRegister("pc");
-				cpuInstruction = readWordAsString(regPC);
-				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-				exitCode = executeInstruction(disassembledInstruction);
-				free(cpuInstruction);
-				free(disassembledInstruction);
-			}
-			while(exitCode == RET_SUCCESS);
-		}
-		else
-		{
-			exitCode = RET_SUCCESS;
-			for(instructionCount = 0; (instructionCount < secondNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
-			{
-				regPC = getRegister("pc");
-				cpuInstruction = readWordAsString(regPC);
-				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-				exitCode = executeInstruction(disassembledInstruction);
-				free(cpuInstruction);
-				free(disassembledInstruction);
-			}
-		}
-
+                if(!secondParametre)
+                        processSimulatorCommand("cont");
+                else
+                {
+                        strcpy(equivalentSimulatorCommand, "cont ");
+                        strcat(equivalentSimulatorCommand, secondParametre);
+                        processSimulatorCommand(equivalentSimulatorCommand);
+                }
+                
 		return RET_SUCCESS;
 	}
 
@@ -401,39 +381,18 @@ int processSimulatorCommand(char* simulatorCommand)
 	// [ru]n
 	if(!(strcmp(command, "run") && strcmp(command, "ru")))
 	{
-		char* cpuInstruction, *disassembledInstruction;
-		unsigned long regPC;
-		int exitCode, instructionCount;
+		char equivalentSimulatorCommand[50];
 
 		setRegister("pc", 0);
                 setRegister("npc", 4);
 		
 		if(!firstParametre)
-		{
-			do
-			{
-				regPC = getRegister("pc");
-				cpuInstruction = readWordAsString(regPC);
-				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-				exitCode = executeInstruction(disassembledInstruction);
-				free(cpuInstruction);
-				free(disassembledInstruction);
-			}
-			while(exitCode == RET_SUCCESS);
-		}
+                        processSimulatorCommand("cont");
 		else
 		{
-			exitCode = RET_SUCCESS;
-			for(instructionCount = 0; (instructionCount < firstNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
-			{
-				regPC = getRegister("pc");
-				cpuInstruction = readWordAsString(regPC);
-				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-				exitCode = executeInstruction(disassembledInstruction);
-
-				free(cpuInstruction);
-				free(disassembledInstruction);
-			}
+			strcpy(equivalentSimulatorCommand, "cont ");
+                        strcat(equivalentSimulatorCommand, firstParametre);
+                        processSimulatorCommand(equivalentSimulatorCommand);
 		}
 
 		return RET_SUCCESS;
