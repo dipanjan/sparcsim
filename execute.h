@@ -39,13 +39,24 @@ union
         double hexToDouble;
 }convertDouble;
 
-        
-        
+       
+
+struct watchPointInfo
+{
+        unsigned long memoryAddress;
+        unsigned long newData;
+};
+
+
+
 int executeInstruction(char* disassembledInstruction);
 unsigned long getAddressValue(char tokens[][20], unsigned short* index);
 unsigned long getReg_Or_ImmValue(char* reg_or_imm);
 void updateICCAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD);
 void updateICCMulDivLogical(unsigned long regRD);
 void updateFCC(unsigned short fcc);
+int executeNextInstruction();
+void setWatchPointInfo(unsigned long memoryAddress, unsigned long newData);
+struct watchPointInfo* getWatchPointInfo();
 
 #endif

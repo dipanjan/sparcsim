@@ -7,6 +7,7 @@
 #define RET_FAILURE 						-1
 #define RET_NOTACOMMAND 					 2
 #define RET_BREAKPOINT   					 3
+#define RET_WATCHPOINT   					 4
 
 
 
