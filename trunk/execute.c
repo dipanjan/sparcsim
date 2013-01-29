@@ -1326,20 +1326,37 @@ int executeNextInstruction()
     unsigned long regPC;
     signed int exitCode;
     
+    // Get the PC value
     regPC = getRegister("pc");
+    
+    // Do we need to break?
     if(isBreakPoint(regPC))
         return RET_BREAKPOINT;
     
+    //Fetch the instruction word
     cpuInstruction = readWordAsString(regPC);
+    
+    // Disassemble the instruction
     disassembledInstruction = (char*)decodeInstruction(cpuInstruction, regPC);
+    
+    // Save instruction info
+    lastInstructionInfo.regPC = regPC;
+    strcpy(lastInstructionInfo.cpuInstruction, cpuInstruction);
+    strcpy(lastInstructionInfo.disassembledInstruction, disassembledInstruction);
+    
+    // Execute instruction
     exitCode = executeInstruction(disassembledInstruction);
+    
+    // Verify the outcome
     if(exitCode == RET_WATCHPOINT)
         exitCode =  RET_WATCHPOINT;
     else
         exitCode = RET_SUCCESS;
     
+    // Free up grabbed memory, prevent memory leak
     free(cpuInstruction);
     free(disassembledInstruction);
+    
     return exitCode;
 }
 

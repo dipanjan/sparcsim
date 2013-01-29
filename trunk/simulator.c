@@ -78,6 +78,7 @@ int processSimulatorCommand(char* simulatorCommand)
 	char* command = NULL, *firstParametre = NULL, *secondParametre = NULL, *arguments = (char*)malloc(200);
 	unsigned long firstNumericParametre = 0, secondNumericParametre = 0;
         unsigned short count = 0;
+        static short isVerbose = 0;             // Verbocity has to be set back to default by the calling command;
 	const char delimiters[] = " \n\t";
 	char* hexNumber = (char*)malloc(32);
         struct watchPointInfo* watchInfo;
@@ -122,6 +123,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		printf("\t[m]em [addr] [count]        |  display memory at [addr] for [count] bytes\n");
 		printf("\t[w]mem <addr> <val>         |  write memory word at <addr> with value <val>\n");
 		printf("\t[s]tep                      |  single step\n");
+                printf("\t[t]ra [inst_count]          |  trace [inst_count] instructions\n");
 		printf("\t[br]eak <addr>              |  add a breakpoint at <addr>\n");
 		printf("\t[de]l <num>                 |  delete breakpoint <num>\n");
 		printf("\t[br]eak                     |  print all breakpoints\n");
@@ -295,6 +297,24 @@ int processSimulatorCommand(char* simulatorCommand)
 	}
 	
 	
+        // [t]ra
+	if(!(strcmp(command, "tra") && strcmp(command, "t")))
+	{
+		char equivalentSimulatorCommand[50];
+
+                if(!firstParametre)
+                    return RET_FAILURE;
+                
+                isVerbose = 1;
+                strcpy(equivalentSimulatorCommand, "cont ");
+                strcat(equivalentSimulatorCommand, firstParametre);
+                processSimulatorCommand(equivalentSimulatorCommand);
+                isVerbose = 0;
+                
+		return RET_SUCCESS;
+	}
+        
+        
 	// [c]ont
 	if(!(strcmp(command, "cont") && strcmp(command, "c")))
 	{
@@ -320,6 +340,12 @@ int processSimulatorCommand(char* simulatorCommand)
                                 return RET_SUCCESS;
                             case RET_SUCCESS:
                                 instructionCount++;
+                                if(isVerbose)
+                                {
+                                    printf("\t%08lX:\t", lastInstructionInfo.regPC);
+                                    displayWord(lastInstructionInfo.cpuInstruction, 1);
+                                    printf("\t%s\n",lastInstructionInfo.disassembledInstruction);
+                                }
                         }
                     }
                     while(exitCode == RET_SUCCESS);
@@ -341,6 +367,13 @@ int processSimulatorCommand(char* simulatorCommand)
                                 printf("Watchpoint(%d) encountered at: 0x%08lX after executing %d instructions, Data address: 0x%08lX, New data: 0x%08lX\n", getWatchPointSerial(), getRegister("pc"), instructionCount, watchInfo->memoryAddress, watchInfo->newData);
                                 free(watchInfo);
                                 return RET_SUCCESS;
+                            case RET_SUCCESS:
+                                if(isVerbose)
+                                {
+                                    printf("\t%08lX:\t", lastInstructionInfo.regPC);
+                                    displayWord(lastInstructionInfo.cpuInstruction, 1);
+                                    printf("\t%s\n",lastInstructionInfo.disassembledInstruction);
+                                }
                         }
                     }
 		}
