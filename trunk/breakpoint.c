@@ -4,10 +4,12 @@
 
 struct breakPoint* breakPointList = NULL;
 short breakPointSerial = 0;
+short watchPointSerial = 0;
 static unsigned long lastBreakPointAt = 0;
 static unsigned short isLastBreakPointEncountered = 0;
 static unsigned long lastWatchPointAt = 0;
 static unsigned short isLastWatchPointEncountered = 0;
+
 
 
 void initializeBreakPointList()
@@ -134,23 +136,26 @@ struct breakPoint* getBreakPoint(unsigned short isReset)
 
 int isBreakPoint(unsigned long regPC)
 {
-	struct breakPoint* prevBreakPoint, *curBreakPoint;
+	struct breakPoint *prevBreakPoint, *curBreakPoint;
 
 	prevBreakPoint = breakPointList;
 	curBreakPoint = breakPointList;
 
 	while(curBreakPoint)
 	{
-		if(curBreakPoint->memoryAddress == regPC) 
+            if(curBreakPoint->breakPointType == BREAK_POINT)
+            {
+                if(curBreakPoint->memoryAddress == regPC) 
                 {
                     if(lastBreakPointAt == regPC)
                     {
                         if(isLastBreakPointEncountered)
-                                isLastBreakPointEncountered = 0;
+                            isLastBreakPointEncountered = 0;
                         else
                         {
                             lastBreakPointAt = regPC;
-                            isLastBreakPointEncountered = 1;
+                            isLastBreakPointEncountered = 1; 
+                            breakPointSerial = curBreakPoint->breakPointSerial;
                             return 1;
                         }
                     }
@@ -158,14 +163,74 @@ int isBreakPoint(unsigned long regPC)
                     {
                         lastBreakPointAt = regPC;
                         isLastBreakPointEncountered = 1;
+                        breakPointSerial = curBreakPoint->breakPointSerial;
                         return 1;
                     }
                 }
-		prevBreakPoint = curBreakPoint;
-		curBreakPoint = curBreakPoint->nextBreakPoint;
+            }
+            prevBreakPoint = curBreakPoint;
+            curBreakPoint = curBreakPoint->nextBreakPoint;
 	}
 
 	return 0;
+}
+
+
+
+short getBreakPointSerial()
+{
+    return breakPointSerial;
+}
+
+
+
+int isWatchPoint(unsigned long memoryAddress, unsigned long regPC)
+{
+	struct breakPoint *prevBreakPoint, *curBreakPoint; 
+
+	prevBreakPoint = breakPointList;
+	curBreakPoint = breakPointList;
+        memoryAddress = wordAlign(memoryAddress);
+
+	while(curBreakPoint)
+	{
+            if(curBreakPoint->breakPointType == WATCH_POINT)
+            {
+                if(curBreakPoint->memoryAddress == memoryAddress) 
+                {
+                    if(lastWatchPointAt == regPC)
+                    {
+                        if(isLastWatchPointEncountered)
+                            isLastWatchPointEncountered = 0;
+                        else
+                        {
+                            lastWatchPointAt = regPC;
+                            isLastWatchPointEncountered = 1;
+                            watchPointSerial = curBreakPoint->breakPointSerial;
+                            return 1;
+                        }
+                    }
+                    else
+                    {
+                        lastWatchPointAt = regPC;
+                        isLastWatchPointEncountered = 1;
+                        watchPointSerial = curBreakPoint->breakPointSerial;
+                        return 1;
+                    }
+                }
+            }
+            prevBreakPoint = curBreakPoint;
+            curBreakPoint = curBreakPoint->nextBreakPoint;
+	}
+
+	return 0;
+}
+
+
+
+short getWatchPointSerial()
+{
+    return watchPointSerial;
 }
 
 

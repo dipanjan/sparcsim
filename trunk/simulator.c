@@ -78,10 +78,9 @@ int processSimulatorCommand(char* simulatorCommand)
 	char* command = NULL, *firstParametre = NULL, *secondParametre = NULL, *arguments = (char*)malloc(200);
 	unsigned long firstNumericParametre = 0, secondNumericParametre = 0;
         unsigned short count = 0;
-	static unsigned long lastEncounteredBreakPoint = 0;
-	static short isLastEncounteredBreakPointValid = 0;
 	const char delimiters[] = " \n\t";
 	char* hexNumber = (char*)malloc(32);
+        struct watchPointInfo* watchInfo;
 	
         // Strip off #
         for(count = 0; count < strlen(simulatorCommand); count++)
@@ -299,61 +298,51 @@ int processSimulatorCommand(char* simulatorCommand)
 	// [c]ont
 	if(!(strcmp(command, "cont") && strcmp(command, "c")))
 	{
-		char* cpuInstruction, *disassembledInstruction;
-		unsigned long regPC;
 		int exitCode, instructionCount;
 
 		instructionCount = 0;
+                exitCode = RET_SUCCESS;
+                
 		if(!firstParametre)
 		{
-			do
-			{
-				regPC = getRegister("pc");
-				if(isBreakPoint(regPC))
-				{
-					if((regPC == lastEncounteredBreakPoint) && isLastEncounteredBreakPointValid && !instructionCount)
-						isLastEncounteredBreakPointValid = 0;
-					else
-					{
-						lastEncounteredBreakPoint = regPC;
-						isLastEncounteredBreakPointValid = 1;
-						printf("Breaking at: 0x%lX after executing %d instructions\n", regPC, instructionCount);
-						return RET_SUCCESS;
-					}
-				}
-				cpuInstruction = readWordAsString(regPC);
-				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-				exitCode = executeInstruction(disassembledInstruction);
-				free(cpuInstruction);
-				free(disassembledInstruction);
-				instructionCount++;
-			}
-			while(exitCode == RET_SUCCESS);
+                    do
+                    {
+                        exitCode = executeNextInstruction();
+                        switch(exitCode)
+                        {
+                            case RET_BREAKPOINT: 
+                                printf("Breakpoint(%d) encountered at: 0x%08lX after executing %d instructions\n", getBreakPointSerial(), getRegister("pc"), instructionCount);
+                                return RET_SUCCESS;
+                            case RET_WATCHPOINT:
+                                watchInfo = getWatchPointInfo();
+                                printf("Watchpoint(%d) encountered at: 0x%08lX after executing %d instructions, Data address: 0x%08lX, New data: 0x%08lX\n", getWatchPointSerial(), getRegister("pc"), instructionCount, watchInfo->memoryAddress, watchInfo->newData);
+                                free(watchInfo);
+                                return RET_SUCCESS;
+                            case RET_SUCCESS:
+                                instructionCount++;
+                        }
+                    }
+                    while(exitCode == RET_SUCCESS);
 		}
+                
 		else
 		{
-			exitCode = RET_SUCCESS;
-			for(instructionCount = 0; (instructionCount < firstNumericParametre) && (exitCode == RET_SUCCESS); instructionCount++)
-			{
-				regPC = getRegister("pc");
-				if(isBreakPoint(regPC))
-				{
-                                    if((regPC == lastEncounteredBreakPoint) && isLastEncounteredBreakPointValid && !instructionCount)
-                                            isLastEncounteredBreakPointValid = 0;
-                                    else
-                                    {
-                                            lastEncounteredBreakPoint = regPC;
-                                            isLastEncounteredBreakPointValid = 1;
-                                            printf("Breaking at: 0x%lX after executing %d instructions\n", regPC, instructionCount);
-                                            return RET_SUCCESS;
-                                    }
-				}
-				cpuInstruction = readWordAsString(regPC);
-				disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-				exitCode = executeInstruction(disassembledInstruction);
-				free(cpuInstruction);
-				free(disassembledInstruction);
-			}
+                    exitCode = RET_SUCCESS;
+                    for(instructionCount = 0; instructionCount < firstNumericParametre; instructionCount++)
+                    {
+                        exitCode = executeNextInstruction();
+                        switch(exitCode)
+                        {
+                            case RET_BREAKPOINT: 
+                                printf("Breakpoint(%d) encountered at: 0x%08lX after executing %d instructions\n", getBreakPointSerial(), getRegister("pc"), instructionCount);
+                                return RET_SUCCESS;
+                            case RET_WATCHPOINT:
+                                watchInfo = getWatchPointInfo();
+                                printf("Watchpoint(%d) encountered at: 0x%08lX after executing %d instructions, Data address: 0x%08lX, New data: 0x%08lX\n", getWatchPointSerial(), getRegister("pc"), instructionCount, watchInfo->memoryAddress, watchInfo->newData);
+                                free(watchInfo);
+                                return RET_SUCCESS;
+                        }
+                    }
 		}
 
 		return RET_SUCCESS;
@@ -366,7 +355,6 @@ int processSimulatorCommand(char* simulatorCommand)
 		char* cpuInstruction, *disassembledInstruction;
 		unsigned long regPC;
 		int exitCode, instructionCount;
-		unsigned short isReset;
 
 		if(!firstParametre)
 			return RET_FAILURE;

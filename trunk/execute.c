@@ -2,6 +2,10 @@
 
 
 
+struct watchPointInfo* watchInfo;
+
+
+
 int executeInstruction(char* disassembledInstruction)
 {
 	char tokens[10][20];
@@ -19,7 +23,7 @@ int executeInstruction(char* disassembledInstruction)
         regFSR = getRegister("fsr");
         struct processor_status_register psr = castUnsignedLongToPSR(regPSR);
         struct floating_point_state_register fsr = castUnsignedLongToFSR(regFSR);
-
+        
         // Strip off %hi to differentiate it from SETHI instruction
 	for(index = 0; index < strlen(disassembledInstruction) - 3; index++)
 	{
@@ -472,7 +476,12 @@ int executeInstruction(char* disassembledInstruction)
         else
         if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ldstub")))
 	{
-		setRegister(tokens[index], readByte(memoryAddress));
+                if(isWatchPoint(memoryAddress, regPC))
+                {
+                    setWatchPointInfo(memoryAddress, (unsigned long)0xFF);
+                    return RET_WATCHPOINT;
+                }
+                setRegister(tokens[index], readByte(memoryAddress));
 		writeByte(memoryAddress, 0xFF);
 	}
         
@@ -482,6 +491,11 @@ int executeInstruction(char* disassembledInstruction)
                 unsigned long registerContent;
                 
                 registerContent = getRegister(tokens[index]);
+                if(isWatchPoint(memoryAddress, regPC))
+                {
+                    setWatchPointInfo(memoryAddress, registerContent);
+                    return RET_WATCHPOINT;
+                }
                 setRegister(tokens[index], readWord(memoryAddress));
 		writeWord(memoryAddress, registerContent);
 	}
@@ -512,6 +526,11 @@ int executeInstruction(char* disassembledInstruction)
         if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "stb")))
 	{
                 char byte = regRD & 0x000000FF;
+                if(isWatchPoint(memoryAddress, regPC))
+                {
+                    setWatchPointInfo(memoryAddress, (unsigned long)byte);
+                    return RET_WATCHPOINT;
+                }
                 writeByte(memoryAddress, byte);
 	}
         
@@ -519,12 +538,22 @@ int executeInstruction(char* disassembledInstruction)
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sth")))
 	{
                 unsigned short halfWord = regRD & 0x0000FFFF;
+                if(isWatchPoint(memoryAddress, regPC))
+                {
+                    setWatchPointInfo(memoryAddress, regRD);
+                    return RET_WATCHPOINT;
+                }
                 writeHalfWord(memoryAddress, halfWord);
 	}
 	
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "st")))
 	{
+                if(isWatchPoint(memoryAddress, regPC))
+                {
+                    setWatchPointInfo(memoryAddress, regRD);
+                    return RET_WATCHPOINT;
+                }
                 writeWord(memoryAddress, regRD);
 	}
         
@@ -533,8 +562,19 @@ int executeInstruction(char* disassembledInstruction)
 	{
                 unsigned long regNextRD;
                 
-                writeWord(memoryAddress, regRD);
                 regNextRD = getRegister(getNextRegister(tokens[1]));
+                if(isWatchPoint(memoryAddress, regPC))
+                {
+                    setWatchPointInfo(memoryAddress, regRD);
+                    return RET_WATCHPOINT;
+                }
+                else
+                    if(isWatchPoint(memoryAddress + 4, regPC))
+                    {
+                        setWatchPointInfo(memoryAddress, regNextRD);
+                        return RET_WATCHPOINT;
+                    }
+                writeWord(memoryAddress, regRD);
                 writeWord(memoryAddress + 4, regNextRD);
 	}
 	
@@ -1276,6 +1316,49 @@ void updateFCC(unsigned short fcc)
 
 	// Set FSR back to modify FCC bits
 	setRegister("fsr", regFSR);
+}
+
+
+
+int executeNextInstruction()
+{
+    char *cpuInstruction, *disassembledInstruction;
+    unsigned long regPC;
+    signed int exitCode;
+    
+    regPC = getRegister("pc");
+    if(isBreakPoint(regPC))
+        return RET_BREAKPOINT;
+    
+    cpuInstruction = readWordAsString(regPC);
+    disassembledInstruction = (char*)decodeInstruction(cpuInstruction, regPC);
+    exitCode = executeInstruction(disassembledInstruction);
+    if(exitCode == RET_WATCHPOINT)
+        exitCode =  RET_WATCHPOINT;
+    else
+        exitCode = RET_SUCCESS;
+    
+    free(cpuInstruction);
+    free(disassembledInstruction);
+    return exitCode;
+}
+
+
+
+void setWatchPointInfo(unsigned long memoryAddress, unsigned long newData)
+{
+    watchInfo = (struct watchPointInfo*)malloc(sizeof(struct watchPointInfo));
+    if(!watchInfo)
+        return;
+    watchInfo->memoryAddress = memoryAddress;
+    watchInfo->newData = newData;
+}
+
+
+
+struct watchPointInfo* getWatchPointInfo()
+{
+    return watchInfo;
 }
 
 

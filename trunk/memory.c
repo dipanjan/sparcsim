@@ -89,10 +89,7 @@ unsigned long readWord(unsigned long memoryAddress)
 
 
 int writeByte(unsigned long memoryAddress, char byte)
-{
-	if(isBreakPoint(memoryAddress))
-            return RET_BREAKPOINT;
-        
+{        
         switch(allocateMemory(memoryAddress))
 	{
 	case SECOND_PAGE_TABLE_ALLOCATION_ERROR:
@@ -116,9 +113,6 @@ int writeByte(unsigned long memoryAddress, char byte)
 
 int writeHalfWord(unsigned long memoryAddress, unsigned short halfWord)
 {
-        if(isBreakPoint(memoryAddress))
-                return RET_BREAKPOINT;
-        
         switch(allocateMemory(memoryAddress))
 	{
 	case SECOND_PAGE_TABLE_ALLOCATION_ERROR:
@@ -145,9 +139,6 @@ int writeHalfWord(unsigned long memoryAddress, unsigned short halfWord)
 
 int writeWord(unsigned long memoryAddress, unsigned long word)
 {
-        if(isBreakPoint(memoryAddress))
-            return RET_BREAKPOINT;
-        
         switch(allocateMemory(memoryAddress))
 	{
 	case SECOND_PAGE_TABLE_ALLOCATION_ERROR:
