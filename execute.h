@@ -49,6 +49,15 @@ struct watchPointInfo
 
 
 
+struct 
+{
+        unsigned long regPC;
+        char disassembledInstruction[50];
+        char cpuInstruction[4];
+}lastInstructionInfo;
+
+
+
 int executeInstruction(char* disassembledInstruction);
 unsigned long getAddressValue(char tokens[][20], unsigned short* index);
 unsigned long getReg_Or_ImmValue(char* reg_or_imm);
