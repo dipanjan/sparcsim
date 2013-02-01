@@ -1333,7 +1333,7 @@ int executeNextInstruction()
     if(isBreakPoint(regPC))
         return RET_BREAKPOINT;
     
-    //Fetch the instruction word
+    // Fetch the instruction word
     cpuInstruction = readWordAsString(regPC);
     
     // Disassemble the instruction
