@@ -2,6 +2,7 @@
 #define TRAP_H
 
 #include <stdio.h>
+#include <memory.h>
 
 
 
@@ -12,5 +13,6 @@
 
 
 //void handleTrap(short trapCode, unsigned long regPC);
+int is_mem_address_not_aligned(unsigned long memoryAddress, int alignment);
 
 #endif
