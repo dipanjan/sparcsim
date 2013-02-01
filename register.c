@@ -459,7 +459,12 @@ unsigned long castFSRToUnsignedLong(struct floating_point_state_register fsr)
 
 char* getNextRegister(char* sparcRegister)
 {
-    char registerType, nextRegister[6];
+    char registerType, nextRegister[15];
+    /*
+     * In earlier implementation, nextRegister[6] was declared. When a garbage, i.e. a  string NOT
+     *  representing a register was being passed from execute.c (convertDouble.doubleToHex[1] = getRegister(getNextRegister(tokens[1])))
+     *  e.g. 0xFFFFFF90 (length = 10), it was passing out of array boundary.
+     */
     unsigned short nextRegisterIndex, characterCount = 2; // Because register name will be at least two character long, e.g. g5
     
     // Copy the register name to prevent alteration of actual register
