@@ -398,14 +398,12 @@ int processSimulatorCommand(char* simulatorCommand)
                 setRegister("wim", 0x0000002);
                 setRegister("psr", 0xF30010E0);
 
-                if(!secondParametre)
-                        processSimulatorCommand("cont");
-                else
-                {
-                        strcpy(equivalentSimulatorCommand, "cont ");
+                strcpy(equivalentSimulatorCommand, "cont ");
+                
+                if(secondParametre)
                         strcat(equivalentSimulatorCommand, secondParametre);
-                        processSimulatorCommand(equivalentSimulatorCommand);
-                }
+
+                processSimulatorCommand(equivalentSimulatorCommand);
                 
 		return RET_SUCCESS;
 	}
@@ -418,16 +416,13 @@ int processSimulatorCommand(char* simulatorCommand)
 
 		setRegister("pc", 0);
                 setRegister("npc", 4);
-		
-		if(!firstParametre)
-                        processSimulatorCommand("cont");
-		else
-		{
-			strcpy(equivalentSimulatorCommand, "cont ");
+                
+                strcpy(equivalentSimulatorCommand, "cont ");
+                
+		if(firstParametre)
                         strcat(equivalentSimulatorCommand, firstParametre);
-                        processSimulatorCommand(equivalentSimulatorCommand);
-		}
 
+                processSimulatorCommand(equivalentSimulatorCommand);
 		return RET_SUCCESS;
 	}
 
