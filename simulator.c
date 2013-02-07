@@ -128,6 +128,7 @@ int processSimulatorCommand(char* simulatorCommand)
 		printf("\t[de]l <num>                 |  delete breakpoint <num>\n");
 		printf("\t[br]eak                     |  print all breakpoints\n");
 		printf("\t[r]eg [reg] [val]           |  show/set integer registers (or windows, eg 'reg w2'\n");
+                printf("\t[p]sr                       |  show PSR fields\n");
                 printf("\t[f]loat                     |  print the FPU registers\n");
 		printf("\t[d]is [addr] [count]        |  disassemble [count] instructions at address [addr]\n");
 		printf("\t[c]ont [cnt]                |  continue execution for [cnt] instructions\n");
@@ -520,92 +521,120 @@ int processSimulatorCommand(char* simulatorCommand)
 	}
 	
 	
-    //[r]eg
-    if(!(strcmp(command, "reg") && strcmp(command, "r")))
-	{
-		char* registerValue, *cpuInstruction, *disassembledInstruction;
-		char sparcRegister[3];
-		unsigned long regPC;
-		unsigned short count;
-		sparcRegister[2] = '\0';
+        //[r]eg
+        if(!(strcmp(command, "reg") && strcmp(command, "r")))
+        {
+                char* registerValue, *cpuInstruction, *disassembledInstruction;
+                char sparcRegister[3];
+                unsigned long regPC;
+                unsigned short count;
+                sparcRegister[2] = '\0';
 
-		if(firstParametre != NULL && secondParametre != NULL)
+                if(firstParametre != NULL && secondParametre != NULL)
                         setRegister(firstParametre, secondNumericParametre);
-		else
-		{
-			printf("\n\t\t    INS\t\t   LOCALS\t    OUTS\t  GLOBALS\n\n");
-			
-			for(count = 0; count < 8; count++)
-			{
-				sparcRegister[1] = count + '0'; 
-				
-				sparcRegister[0] = 'i'; 
-				registerValue = displayRegister(getRegister(sparcRegister));
-				printf("\t%d:\t %s", count, registerValue);
-				free(registerValue);
-				
-				
-				sparcRegister[0] = 'l'; 
-				registerValue = displayRegister(getRegister(sparcRegister));
-				printf("\t %s", registerValue);
-				free(registerValue);
-				
-				sparcRegister[0] = 'o'; 
-				registerValue = displayRegister(getRegister(sparcRegister));
-				printf("\t %s", registerValue);
-				free(registerValue);
-				
-				sparcRegister[0] = 'g';
-				registerValue = displayRegister(getRegister(sparcRegister));
-				printf("\t %s\n", registerValue);
-				free(registerValue);
-			}
-		
-			registerValue = displayRegister(getRegister("psr"));
-			printf("\n\tpsr: %s", registerValue);
-			free(registerValue);
-			
-			registerValue = displayRegister(getRegister("wim"));
-			printf("\t\twim: %s", registerValue);
-			free(registerValue);
-			
-			registerValue = displayRegister(getRegister("tbr"));
-			printf("\t\ttbr: %s", registerValue);
-			free(registerValue);
-			
-			registerValue = displayRegister(getRegister("y"));
-			printf("\t\ty: %s\n\n", registerValue);
-			free(registerValue);
-			
-			regPC = getRegister("pc");
-			registerValue = displayRegister(regPC);
-			cpuInstruction = readWordAsString(regPC);
-			disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-			printf("\tpc : %s\t\t", registerValue);
-			displayWord(cpuInstruction, 1);
-			printf("\t%s", disassembledInstruction);
-			free(cpuInstruction);
-			free(disassembledInstruction);
-			free(registerValue);
-			
-			regPC = getRegister("npc");
-			registerValue = displayRegister(regPC);
-			cpuInstruction = readWordAsString(regPC);
-			disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
-			printf("\n\tnpc: %s\t\t", registerValue);
-			displayWord(cpuInstruction, 1);
-			printf("\t%s", disassembledInstruction);
-			free(cpuInstruction);
-			free(disassembledInstruction);
-			free(registerValue);
-			
-			printf("\n\n");
-		}
-		
-		return RET_SUCCESS;
-	}
-	
-    	
+                else
+                {
+                        printf("\n\t\t    INS\t\t   LOCALS\t    OUTS\t  GLOBALS\n\n");
+
+                        for(count = 0; count < 8; count++)
+                        {
+                                sparcRegister[1] = count + '0'; 
+
+                                sparcRegister[0] = 'i'; 
+                                registerValue = displayRegister(getRegister(sparcRegister));
+                                printf("\t%d:\t %s", count, registerValue);
+                                free(registerValue);
+
+
+                                sparcRegister[0] = 'l'; 
+                                registerValue = displayRegister(getRegister(sparcRegister));
+                                printf("\t %s", registerValue);
+                                free(registerValue);
+
+                                sparcRegister[0] = 'o'; 
+                                registerValue = displayRegister(getRegister(sparcRegister));
+                                printf("\t %s", registerValue);
+                                free(registerValue);
+
+                                sparcRegister[0] = 'g';
+                                registerValue = displayRegister(getRegister(sparcRegister));
+                                printf("\t %s\n", registerValue);
+                                free(registerValue);
+                        }
+
+                        registerValue = displayRegister(getRegister("psr"));
+                        printf("\n\tpsr: %s", registerValue);
+                        free(registerValue);
+
+                        registerValue = displayRegister(getRegister("wim"));
+                        printf("\t\twim: %s", registerValue);
+                        free(registerValue);
+
+                        registerValue = displayRegister(getRegister("tbr"));
+                        printf("\t\ttbr: %s", registerValue);
+                        free(registerValue);
+
+                        registerValue = displayRegister(getRegister("y"));
+                        printf("\t\ty: %s\n\n", registerValue);
+                        free(registerValue);
+
+                        regPC = getRegister("pc");
+                        registerValue = displayRegister(regPC);
+                        cpuInstruction = readWordAsString(regPC);
+                        disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+                        printf("\tpc : %s\t\t", registerValue);
+                        displayWord(cpuInstruction, 1);
+                        printf("\t%s", disassembledInstruction);
+                        free(cpuInstruction);
+                        free(disassembledInstruction);
+                        free(registerValue);
+
+                        regPC = getRegister("npc");
+                        registerValue = displayRegister(regPC);
+                        cpuInstruction = readWordAsString(regPC);
+                        disassembledInstruction = decodeInstruction(cpuInstruction, regPC);
+                        printf("\n\tnpc: %s\t\t", registerValue);
+                        displayWord(cpuInstruction, 1);
+                        printf("\t%s", disassembledInstruction);
+                        free(cpuInstruction);
+                        free(disassembledInstruction);
+                        free(registerValue);
+
+                        printf("\n\n");
+                }
+
+                return RET_SUCCESS;
+        }
+
+
+        // [p]sr
+        if(!(strcmp(command, "psr") && strcmp(command, "p")))
+        {
+            unsigned long regPSR;
+            struct processor_status_register psr;
+
+            regPSR = getRegister("psr");
+            psr = castUnsignedLongToPSR(regPSR);
+
+            printf("\tCWP = %d\n", psr.cwp);
+            printf("\tET  = %d\n", psr.et);
+            printf("\tPS  = %d\n", psr.ps);
+            printf("\tS   = %d\n", psr.s);
+            printf("\tPIL = %d\n", psr.pil);
+            printf("\tEF  = %d\n", psr.ef);
+            printf("\tEC  = %d\n", psr.ec);
+            printf("\tRES = %d\n", psr.reserved);
+            printf("\tC   = %d\n", psr.c);
+            printf("\tV   = %d\n", psr.v);
+            printf("\tZ   = %d\n", psr.z);
+            printf("\tN   = %d\n", psr.n);
+            printf("\tVER = %d\n", psr.ver);
+            printf("\tIMP = %d\n", psr.impl);
+
+            return RET_SUCCESS;
+        }
+
+        
         // [f]loat
         if(!(strcmp(command, "float") && strcmp(command, "f")))
 	{
