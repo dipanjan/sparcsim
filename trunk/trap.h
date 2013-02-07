@@ -11,6 +11,7 @@
 #define WINDOWS_OVERFLOW		  0x05
 #define WINDOWS_UNDERFLOW		  0x06
 #define MEM_ADDRESS_NOT_ALIGNED		  0x07
+#define TAG_OVERFLOW                      0x0A
 
 #define HALFWORD_ALIGN                    2
 #define WORD_ALIGN                        4

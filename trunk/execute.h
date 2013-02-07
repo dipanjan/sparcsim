@@ -67,7 +67,7 @@ void updateICCAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsign
 void updateICCMulDivLogical(unsigned long regRD);
 void updateFCC(unsigned short fcc);
 int executeNextInstruction();
-unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD);
+unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD, unsigned short isTVOpcode);
 void setWatchPointInfo(unsigned long memoryAddress, unsigned long newData);
 struct watchPointInfo* getWatchPointInfo();
 
