@@ -78,7 +78,7 @@ unsigned long readWord(unsigned long memoryAddress)
 {        
         unsigned long word, hexDigit;
         
-        hexDigit = readByte(memoryAddress); memoryAddress++; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
+        hexDigit = readByte(memoryAddress); memoryAddress++; hexDigit = (hexDigit << 24) >> 24; word = hexDigit;
         hexDigit = readByte(memoryAddress); memoryAddress++; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
         hexDigit = readByte(memoryAddress); memoryAddress++; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
         hexDigit = readByte(memoryAddress); memoryAddress++; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;

@@ -47,7 +47,7 @@ OBJECTFILES= \
 
 
 # C Compiler Flags
-CFLAGS=-I. -I /usr/local/include/ -g -ggdb -O0
+CFLAGS=-I. -I /usr/local/include/ -Wall -g -ggdb -O0
 
 # CC Compiler Flags
 CCFLAGS=

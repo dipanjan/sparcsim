@@ -22,7 +22,7 @@ void initializeBreakPointList()
 
 int addBreakPoint(unsigned long memoryAddress, unsigned short breakPointType)
 {
-	struct breakPoint* prevBreakPoint, *curBreakPoint, *nextBreakPoint, *newBreakPoint;
+	struct breakPoint* prevBreakPoint, *curBreakPoint, *newBreakPoint;
 
 	newBreakPoint = (struct breakPoint*)malloc(sizeof(struct breakPoint));
 	if(!newBreakPoint)
@@ -83,7 +83,6 @@ int deleteBreakPoint(unsigned short index)
 		else
 		{
 			// Delete non-first breakpoint
-			unsigned short position;
 
 			curBreakPoint = breakPointList;
 			while((curBreakPoint->breakPointSerial != index) && curBreakPoint->nextBreakPoint)
@@ -136,9 +135,8 @@ struct breakPoint* getBreakPoint(unsigned short isReset)
 
 int isBreakPoint(unsigned long regPC)
 {
-	struct breakPoint *prevBreakPoint, *curBreakPoint;
+	struct breakPoint *curBreakPoint;
 
-	prevBreakPoint = breakPointList;
 	curBreakPoint = breakPointList;
 
 	while(curBreakPoint)
@@ -168,7 +166,6 @@ int isBreakPoint(unsigned long regPC)
                     }
                 }
             }
-            prevBreakPoint = curBreakPoint;
             curBreakPoint = curBreakPoint->nextBreakPoint;
 	}
 
@@ -186,9 +183,8 @@ short getBreakPointSerial()
 
 int isWatchPoint(unsigned long memoryAddress, unsigned long regPC)
 {
-	struct breakPoint *prevBreakPoint, *curBreakPoint; 
+	struct breakPoint *curBreakPoint; 
 
-	prevBreakPoint = breakPointList;
 	curBreakPoint = breakPointList;
         memoryAddress = wordAlign(memoryAddress);
 
@@ -219,7 +215,6 @@ int isWatchPoint(unsigned long memoryAddress, unsigned long regPC)
                     }
                 }
             }
-            prevBreakPoint = curBreakPoint;
             curBreakPoint = curBreakPoint->nextBreakPoint;
 	}
 

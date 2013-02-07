@@ -335,16 +335,16 @@ int restoreRegisters()
 {
 	unsigned long regPSR, regWIM;
 	struct processor_status_register psr;
-	short nextCWP;
+	// short nextCWP;
 
 	regPSR = getRegister("psr");
         psr = castUnsignedLongToPSR(regPSR);
 	regWIM = getRegister("wim");
 
-	if(psr.cwp == (sparcRegisters.registerWindows - 1))
+	/*if(psr.cwp == (sparcRegisters.registerWindows - 1))
 		nextCWP = 0;
 	else
-		nextCWP = sparcRegisters.psr.cwp + 1;
+		nextCWP = sparcRegisters.psr.cwp + 1;*/
 
 
 	if(getBit(regWIM, psr.cwp + 1))
@@ -459,7 +459,7 @@ unsigned long castFSRToUnsignedLong(struct floating_point_state_register fsr)
 
 char* getNextRegister(char* sparcRegister)
 {
-    char registerType, nextRegister[15];
+    char nextRegister[15];
     /*
      * In earlier implementation, nextRegister[6] was declared. When a garbage, i.e. a  string NOT
      *  representing a register was being passed from execute.c (convertDouble.doubleToHex[1] = getRegister(getNextRegister(tokens[1])))
@@ -471,7 +471,6 @@ char* getNextRegister(char* sparcRegister)
     strcpy(nextRegister, sparcRegister);
     sparcRegister = nextRegister;
     
-    registerType = sparcRegister[0];
     nextRegisterIndex = sparcRegister[1] - '0';
     if(sparcRegister[2] != '\0')
         nextRegisterIndex = nextRegisterIndex * 10 +  (sparcRegister[2] - '0');
