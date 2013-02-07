@@ -690,8 +690,39 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 + reg_or_imm;
 		setRegister(tokens[3], regRD);
-		updateICCAddSubtract(regRS1, reg_or_imm, regRD);
-                taggedAddSubtract(regRS1, reg_or_imm, regRD);
+                taggedAddSubtract(regRS1, reg_or_imm, regRD, 0);
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "taddcctv")))
+	{
+		regRD = regRS1 + reg_or_imm;
+                if(taggedAddSubtract(regRS1, reg_or_imm, regRD, 1))
+                {
+                    handleTrap(TAG_OVERFLOW, regPC);
+                    return RET_TRAP;
+                }
+                setRegister(tokens[3], regRD);
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "tsubcc")))
+	{
+		regRD = regRS1 - reg_or_imm;
+		setRegister(tokens[3], regRD);
+                taggedAddSubtract(regRS1, reg_or_imm, regRD, 0);
+	}
+        
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "tsubcctv")))
+	{
+		regRD = regRS1 - reg_or_imm;
+                if(taggedAddSubtract(regRS1, reg_or_imm, regRD, 1))
+                {
+                    handleTrap(TAG_OVERFLOW, regPC);
+                    return RET_TRAP;
+                }
+                setRegister(tokens[3], regRD);
 	}
         
         else
@@ -1339,10 +1370,10 @@ void updateICCAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsign
 
 
 
-unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD)
+unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD, unsigned short isTVOpcode)
 {
         unsigned long regPSR;
-	unsigned short signBit_regRS1, signBit_reg_or_imm, signBit_regRD, isOperandsLSBNonZero;
+	unsigned short signBit_regRS1, signBit_reg_or_imm, signBit_regRD, isOperandsLSBNonZero, isTaggedOverflow;
 	
 
 	regPSR = getRegister("psr");
@@ -1352,9 +1383,34 @@ unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm,
         isOperandsLSBNonZero = getBit(regRS1, 0) | getBit(regRS1, 1) | getBit(reg_or_imm, 0) | getBit(reg_or_imm, 1); 
         
         // Set ICC_OVERFLOW (v) bit: Important for TAGGED arithmetic
-	regPSR = ((signBit_regRS1 && (!signBit_reg_or_imm && !signBit_regRD)) || (!signBit_regRS1 && (signBit_reg_or_imm && signBit_regRD)) || isOperandsLSBNonZero) ? setBit(regPSR, ICC_OVERFLOW) : clearBit(regPSR, ICC_OVERFLOW);
+	isTaggedOverflow = ((signBit_regRS1 && (!signBit_reg_or_imm && !signBit_regRD)) || (!signBit_regRS1 && (signBit_reg_or_imm && signBit_regRD)) || isOperandsLSBNonZero) ? 1 : 0;
         
-        return regPSR;
+        if(isTaggedOverflow && isTVOpcode)
+            return 1;
+        else
+        {
+            // Set ICC_NEGATIVE (n) bit
+            regPSR = getBit(regRD, SIGN_BIT) ? setBit(regPSR, ICC_NEGATIVE) : clearBit(regPSR, ICC_NEGATIVE);
+
+
+            // Set ICC_ZERO (z) bit
+            regPSR = (regRD == 0) ? setBit(regPSR, ICC_ZERO) : clearBit(regPSR, ICC_ZERO);
+
+
+            // Set ICC_OVERFLOW (v) bit: Important for SIGNED arithmetic
+            regPSR = isTaggedOverflow ? setBit(regPSR, ICC_OVERFLOW) : clearBit(regPSR, ICC_OVERFLOW);
+            
+
+            // Set ICC_CARRY (c) bit: Important for UNSIGNED arithmetic
+            regPSR = (!signBit_regRS1 && signBit_reg_or_imm) || (signBit_regRD && (!signBit_regRS1 || signBit_reg_or_imm)) ? setBit(regPSR, ICC_CARRY) : clearBit(regPSR, ICC_CARRY);
+
+
+            // Set PSR back to modify ICC bits
+            setRegister("psr", regPSR);
+        }
+       
+        
+        return isTaggedOverflow;
                 
 }
 
