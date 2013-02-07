@@ -686,6 +686,15 @@ int executeInstruction(char* disassembledInstruction)
 	}
         
         else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "taddcc")))
+	{
+		regRD = regRS1 + reg_or_imm;
+		setRegister(tokens[3], regRD);
+		updateICCAddSubtract(regRS1, reg_or_imm, regRD);
+                taggedAddSubtract(regRS1, reg_or_imm, regRD);
+	}
+        
+        else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "addx")))
 	{
 		regRD = regRS1 + reg_or_imm + psr.c;
@@ -1326,6 +1335,27 @@ void updateICCAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsign
 
 	// Set PSR back to modify ICC bits
 	setRegister("psr", regPSR);
+}
+
+
+
+unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD)
+{
+        unsigned long regPSR;
+	unsigned short signBit_regRS1, signBit_reg_or_imm, signBit_regRD, isOperandsLSBNonZero;
+	
+
+	regPSR = getRegister("psr");
+	signBit_regRS1 = getBit(regRS1, SIGN_BIT);
+	signBit_reg_or_imm = getBit(reg_or_imm, SIGN_BIT);
+	signBit_regRD = getBit(regRD, SIGN_BIT);
+        isOperandsLSBNonZero = getBit(regRS1, 0) | getBit(regRS1, 1) | getBit(reg_or_imm, 0) | getBit(reg_or_imm, 1); 
+        
+        // Set ICC_OVERFLOW (v) bit: Important for TAGGED arithmetic
+	regPSR = ((signBit_regRS1 && (!signBit_reg_or_imm && !signBit_regRD)) || (!signBit_regRS1 && (signBit_reg_or_imm && signBit_regRD)) || isOperandsLSBNonZero) ? setBit(regPSR, ICC_OVERFLOW) : clearBit(regPSR, ICC_OVERFLOW);
+        
+        return regPSR;
+                
 }
 
 
