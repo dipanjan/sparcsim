@@ -10,7 +10,8 @@ int executeInstruction(char* disassembledInstruction)
 {
 	char tokens[10][20];
 	char* token;
-	short count, index, isFormatIIIOpcodeFound;
+	short count, isFormatIIIOpcodeFound;
+        unsigned short index;
 	unsigned long memoryAddress, regPC, regnPC, regPSR, regFSR, regRS1, regRS2, reg_or_imm, regRD;
         float float_regRS1, float_regRS2, float_regRD;
         double double_regRS1, double_regRS2, double_regRD;
@@ -396,6 +397,12 @@ int executeInstruction(char* disassembledInstruction)
 		char* dataWord;
 		unsigned long word, hexDigit;
 
+                if(is_mem_address_not_aligned(memoryAddress, HALFWORD_ALIGN))
+                {
+                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    return RET_TRAP;
+                }
+                
 		dataWord = readWordAsString(memoryAddress);
 		word = 0;
 		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
@@ -425,6 +432,12 @@ int executeInstruction(char* disassembledInstruction)
 		char* dataWord;
 		unsigned long word, hexDigit;
 
+                if(is_mem_address_not_aligned(memoryAddress, HALFWORD_ALIGN))
+                {
+                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    return RET_TRAP;
+                }
+                
 		dataWord = readWordAsString(memoryAddress);
 		word = 0;
 		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
@@ -439,6 +452,12 @@ int executeInstruction(char* disassembledInstruction)
 		char* dataWord;
 		unsigned long word, hexDigit;
 
+                if(is_mem_address_not_aligned(memoryAddress, WORD_ALIGN))
+                {
+                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    return RET_TRAP;
+                }
+                
 		dataWord = readWordAsString(memoryAddress);
 		word = 0;
 		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
@@ -455,6 +474,12 @@ int executeInstruction(char* disassembledInstruction)
 		char* dataWord;
 		unsigned long word, hexDigit;
 
+                if(is_mem_address_not_aligned(memoryAddress, DOUBLEWORD_ALIGN))
+                {
+                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    return RET_TRAP;
+                }
+                
 		dataWord = readWordAsString(memoryAddress); 
                 word = 0;
 		hexDigit = dataWord[0]; hexDigit = (hexDigit << 24) >> 24; word = (word << 8) | hexDigit;
@@ -490,6 +515,12 @@ int executeInstruction(char* disassembledInstruction)
 	{
                 unsigned long registerContent;
                 
+                if(is_mem_address_not_aligned(memoryAddress, WORD_ALIGN))
+                {
+                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    return RET_TRAP;
+                }
+                
                 registerContent = getRegister(tokens[index]);
                 if(isWatchPoint(memoryAddress, regPC))
                 {
@@ -503,7 +534,13 @@ int executeInstruction(char* disassembledInstruction)
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "jmpl")))
 	{
-		setRegister(tokens[index], regPC);
+		if(is_mem_address_not_aligned(memoryAddress, WORD_ALIGN))
+                {
+                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    return RET_TRAP;
+                }
+                
+                setRegister(tokens[index], regPC);
 		setRegister("pc", regnPC);
 		setRegister("npc", memoryAddress);
 		return RET_SUCCESS;
@@ -538,6 +575,13 @@ int executeInstruction(char* disassembledInstruction)
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "sth")))
 	{
                 unsigned short halfWord = regRD & 0x0000FFFF;
+                
+                if(is_mem_address_not_aligned(memoryAddress, HALFWORD_ALIGN))
+                {
+                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    return RET_TRAP;
+                }
+                
                 if(isWatchPoint(memoryAddress, regPC))
                 {
                     setWatchPointInfo(memoryAddress, regRD);
@@ -549,6 +593,12 @@ int executeInstruction(char* disassembledInstruction)
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "st")))
 	{
+                if(is_mem_address_not_aligned(memoryAddress, WORD_ALIGN))
+                {
+                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    return RET_TRAP;
+                }
+                
                 if(isWatchPoint(memoryAddress, regPC))
                 {
                     setWatchPointInfo(memoryAddress, regRD);
@@ -561,6 +611,12 @@ int executeInstruction(char* disassembledInstruction)
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "std")))
 	{
                 unsigned long regNextRD;
+                
+                if(is_mem_address_not_aligned(memoryAddress, DOUBLEWORD_ALIGN))
+                {
+                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    return RET_TRAP;
+                }
                 
                 regNextRD = getRegister(getNextRegister(tokens[1]));
                 if(isWatchPoint(memoryAddress, regPC))
@@ -744,7 +800,8 @@ int executeInstruction(char* disassembledInstruction)
 		unsigned long regY;
 
 		regY = getRegister("y");
-		dividend = (dividend << 32) | regY;
+		// dividend = (dividend << 32) | regY;
+                dividend = regY;
 		dividend = (dividend << 32) | regRS1;
 		quotient = dividend / reg_or_imm;
 
@@ -762,7 +819,8 @@ int executeInstruction(char* disassembledInstruction)
 		unsigned long regY;
 
 		regY = getRegister("y");
-		dividend = (dividend << 32) | regY;
+		// dividend = (dividend << 32) | regY;
+                dividend = regY;
 		dividend = (dividend << 32) | regRS1; 
 		quotient = dividend / signed_reg_or_imm;
 
@@ -782,7 +840,8 @@ int executeInstruction(char* disassembledInstruction)
 		unsigned long regY;
 
 		regY = getRegister("y");
-		dividend = (dividend << 32) | regY;
+		// dividend = (dividend << 32) | regY;
+                dividend = regY;
 		dividend = (dividend << 32) | regRS1;
 		quotient = dividend / reg_or_imm;
 
@@ -806,7 +865,8 @@ int executeInstruction(char* disassembledInstruction)
 		unsigned long regY;
 
 		regY = getRegister("y");
-		dividend = (dividend << 32) | regY;
+		// dividend = (dividend << 32) | regY;
+                dividend = regY;
 		dividend = (dividend << 32) | regRS1; 
 		quotient = dividend / signed_reg_or_imm;
 
@@ -1240,7 +1300,7 @@ void updateICCAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsign
         */
 
 	unsigned long regPSR;
-	unsigned short signBit_regRS1, signBit_reg_or_imm, signBit_regRD, isCarry, isOverflow;
+	unsigned short signBit_regRS1, signBit_reg_or_imm, signBit_regRD;
 	
 
 	regPSR = getRegister("psr");
@@ -1273,11 +1333,11 @@ void updateICCAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsign
 void updateICCMulDivLogical(unsigned long regRD)
 {
 	unsigned long regPSR;
-	unsigned short signBit_regRD;
+	// unsigned short signBit_regRD;
 	
 
 	regPSR = getRegister("psr");
-	signBit_regRD = getBit(regRD, SIGN_BIT);
+	// signBit_regRD = getBit(regRD, SIGN_BIT);
 
 	// Set ICC_NEGATIVE (n) bit
 	regPSR = getBit(regRD, SIGN_BIT) ? setBit(regPSR, ICC_NEGATIVE) : clearBit(regPSR, ICC_NEGATIVE);

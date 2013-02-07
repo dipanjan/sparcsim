@@ -132,7 +132,7 @@
           <incDir>
             <pElem>.</pElem>
           </incDir>
-          <commandLine>-I. -I /usr/local/include/ -g -ggdb -O0</commandLine>
+          <commandLine>-I. -I /usr/local/include/ -Wall -g -ggdb -O0</commandLine>
         </cTool>
         <ccTool>
           <developmentMode>0</developmentMode>

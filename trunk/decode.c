@@ -5,7 +5,7 @@
 char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 {
 	char* disassembledInstruction = (char*)malloc(50);
-	unsigned long instructionWord, hexDigit, op, disp30, rd, a, cond, op2, imm22, disp22, op3, rs1, asi, i, rs2, simm13, opf;
+	unsigned long instructionWord, hexDigit, op, disp30, rd, a, cond, op2, imm22, disp22, op3, rs1, /*asi, */i, rs2, simm13, opf;
 	long sign_extended_simm13, sign_extended_disp22;
 	short fsr = 0, fq = 0, csr = 0, cq = 0;
 	char* hexNumber = (char*)malloc(32);
@@ -169,7 +169,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
             i = (instructionWord & 0x00002000) >> 13;
             simm13 = (instructionWord & 0x00001FFF);
             rs2 = instructionWord & 0x0000201F;
-            asi = (instructionWord & 0x00001FE0) >> 5;
+            // asi = (instructionWord & 0x00001FE0) >> 5;
             opf = (instructionWord & 0x00003FE0) >> 5;
             
             // Sign extend simm13
