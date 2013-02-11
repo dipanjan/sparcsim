@@ -347,7 +347,8 @@ int processSimulatorCommand(char* simulatorCommand)
                                     displayWord(lastInstructionInfo.cpuInstruction, 1);
                                     printf("\t%s\n",lastInstructionInfo.disassembledInstruction);
                                 }
-                            case RET_FAILURE:
+                                break;
+                            case RET_FAILURE: 
                                 return RET_FAILURE;
                         }
                     }
@@ -377,6 +378,7 @@ int processSimulatorCommand(char* simulatorCommand)
                                     displayWord(lastInstructionInfo.cpuInstruction, 1);
                                     printf("\t%s\n",lastInstructionInfo.disassembledInstruction);
                                 }
+                                break;
                         }
                     }
 		}
