@@ -812,7 +812,7 @@ int executeInstruction(char* disassembledInstruction)
 		extended_regRD = extended_regRD & 0x00000000FFFFFFFFULL;
 		regRD = regRD | (unsigned long)extended_regRD;
 		setRegister(tokens[3], regRD);
-                updateICCMulDivLogical(regRD);
+                updateICCMulLogical(regRD);
 	}
         
         else
@@ -830,7 +830,7 @@ int executeInstruction(char* disassembledInstruction)
 		extended_regRD = extended_regRD & 0x00000000FFFFFFFFULL;
 		regRD = regRD | (unsigned long)extended_regRD;
 		setRegister(tokens[3], regRD);
-                updateICCMulDivLogical(regRD);
+                updateICCMulLogical(regRD);
 	}
 
 	else
@@ -888,12 +888,12 @@ int executeInstruction(char* disassembledInstruction)
 		if(quotient > ULONG_MAX)
                 {
 			setRegister(tokens[3], 0xFFFFFFFF);
-                        updateICCMulDivLogical(0xFFFFFFFF);
+                        updateICCDiv(0xFFFFFFFF, 1);
                 }
 		else
                 {
 			setRegister(tokens[3], (unsigned long)quotient);
-                        updateICCMulDivLogical((unsigned long)quotient);
+                        updateICCDiv((unsigned long)quotient, 0);
                 }
 	}
 
@@ -912,18 +912,18 @@ int executeInstruction(char* disassembledInstruction)
 		if(quotient > (signed long)0x7FFFFFFF)
                 {
 			setRegister(tokens[3], 0x7FFFFFFF);    // Positive overflow
-                        updateICCMulDivLogical(0x7FFFFFFF);
+                        updateICCDiv(0x7FFFFFFF, 1);
                 }
                 else 
                 if(quotient < (signed long)0x80000000)
                 {
                         setRegister(tokens[3], 0x80000000);    // Negative underflow
-                        updateICCMulDivLogical(0x80000000);
+                        updateICCDiv(0x80000000, 1);
                 }
 		else
                 {
 			setRegister(tokens[3], (unsigned long)(quotient & 0x00000000FFFFFFFF));
-                        updateICCMulDivLogical((unsigned long)(quotient & 0x00000000FFFFFFFF));
+                        updateICCDiv((unsigned long)(quotient & 0x00000000FFFFFFFF), 0);
                 }
 	}
         
@@ -1076,7 +1076,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 & reg_or_imm;
 		setRegister(tokens[3], regRD);
-		updateICCMulDivLogical(regRD);
+		updateICCMulLogical(regRD);
 	}
         
         else
@@ -1084,7 +1084,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 & (~reg_or_imm);
 		setRegister(tokens[3], regRD);
-		updateICCMulDivLogical(regRD);
+		updateICCMulLogical(regRD);
 	}
         
         else
@@ -1100,7 +1100,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 | reg_or_imm;
 		setRegister(tokens[3], regRD);
-		updateICCMulDivLogical(regRD);
+		updateICCMulLogical(regRD);
 	}
         
         else
@@ -1112,7 +1112,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 | (~reg_or_imm);
 		setRegister(tokens[3], regRD);
-		updateICCMulDivLogical(regRD);
+		updateICCMulLogical(regRD);
 	}
         
         else
@@ -1124,7 +1124,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = regRS1 ^ reg_or_imm;
 		setRegister(tokens[3], regRD);
-		updateICCMulDivLogical(regRD);
+		updateICCMulLogical(regRD);
 	}
         
 	else
@@ -1136,7 +1136,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		regRD = ~(regRS1 ^ reg_or_imm);
 		setRegister(tokens[3], regRD);
-		updateICCMulDivLogical(regRD);
+		updateICCMulLogical(regRD);
 	}
 
 	else
@@ -1460,14 +1460,11 @@ unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm,
 
 
 
-void updateICCMulDivLogical(unsigned long regRD)
+void updateICCMulLogical(unsigned long regRD)
 {
-	unsigned long regPSR;
-	// unsigned short signBit_regRD;
-	
+	unsigned long regPSR;	
 
 	regPSR = getRegister("psr");
-	// signBit_regRD = getBit(regRD, SIGN_BIT);
 
 	// Set ICC_NEGATIVE (n) bit
 	regPSR = getBit(regRD, SIGN_BIT) ? setBit(regPSR, ICC_NEGATIVE) : clearBit(regPSR, ICC_NEGATIVE);
@@ -1479,6 +1476,34 @@ void updateICCMulDivLogical(unsigned long regRD)
 
 	// Set ICC_OVERFLOW (v) bit: Important for SIGNED arithmetic
 	regPSR = clearBit(regPSR, ICC_OVERFLOW);
+
+
+	// Set ICC_CARRY (c) bit: Important for UNSIGNED arithmetic
+	regPSR = clearBit(regPSR, ICC_CARRY);
+
+
+	// Set PSR back to modify ICC bits
+	setRegister("psr", regPSR);
+}
+
+
+
+void updateICCDiv(unsigned long regRD, short isOverflow)
+{
+	unsigned long regPSR;
+
+	regPSR = getRegister("psr");
+
+	// Set ICC_NEGATIVE (n) bit
+	regPSR = getBit(regRD, SIGN_BIT) ? setBit(regPSR, ICC_NEGATIVE) : clearBit(regPSR, ICC_NEGATIVE);
+	
+
+	// Set ICC_ZERO (z) bit
+	regPSR = (regRD == 0) ? setBit(regPSR, ICC_ZERO) : clearBit(regPSR, ICC_ZERO);
+
+
+	// Set ICC_OVERFLOW (v) bit: Important for SIGNED arithmetic
+	regPSR = isOverflow ? setBit(regPSR, ICC_OVERFLOW) : clearBit(regPSR, ICC_OVERFLOW);
 
 
 	// Set ICC_CARRY (c) bit: Important for UNSIGNED arithmetic
