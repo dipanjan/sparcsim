@@ -905,18 +905,17 @@ int executeInstruction(char* disassembledInstruction)
 		unsigned long regY;
 
 		regY = getRegister("y");
-		// dividend = (dividend << 32) | regY;
                 dividend = regY;
 		dividend = (dividend << 32) | regRS1; 
 		quotient = dividend / signed_reg_or_imm;
 
-		if(quotient > 0x7FFFFFFF)
+		if(quotient > (signed long)0x7FFFFFFF)
                 {
 			setRegister(tokens[3], 0x7FFFFFFF);    // Positive overflow
                         updateICCMulDivLogical(0x7FFFFFFF);
                 }
                 else 
-                if(quotient < 0x80000000)
+                if(quotient < (signed long)0x80000000)
                 {
                         setRegister(tokens[3], 0x80000000);    // Negative underflow
                         updateICCMulDivLogical(0x80000000);
@@ -1306,7 +1305,7 @@ unsigned long getReg_Or_ImmValue(char* reg_or_imm)
 			(reg_or_imm[0] == 'l') || (reg_or_imm[0] == 'i'))
 		return getRegister(reg_or_imm);
 	else
-		// Note: stroul() has been used here to interpret the bit pattern
+		// Note: strtoul() has been used here to interpret the bit pattern
 		// as signed long instead of unsigned long as translated by strtol()
 		return strtoul(reg_or_imm, NULL, 0);
 }
