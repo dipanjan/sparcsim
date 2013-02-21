@@ -98,24 +98,39 @@ char* displayRegister(unsigned long registerValue)
 
 
 
+unsigned short getRegisterWindow()
+{
+    return sparcRegisters.psr.cwp;
+}
+
+
+
+void setRegisterWindow(unsigned short registerWindow)
+{
+    sparcRegisters.psr.cwp = registerWindow;
+    sparcRegisters.cwptr = sparcRegisters.registerSet + sparcRegisters.psr.cwp * REGISTER_WINDOW_WIDTH;
+}
+
+
+
 unsigned long* getWindowPointer(int direction)
 {
    // Move window pointer forward
    if(direction == 1)
     {
-		if(sparcRegisters.psr.cwp == (sparcRegisters.registerWindows -1))
-			return sparcRegisters.registerSet;
-		else
-			return sparcRegisters.cwptr + REGISTER_WINDOW_WIDTH;
+            if(sparcRegisters.psr.cwp == (sparcRegisters.registerWindows - 1))
+                    return sparcRegisters.registerSet;
+            else
+                    return sparcRegisters.cwptr + REGISTER_WINDOW_WIDTH;
     }
 	
-	// Move window pointer backward
+    // Move window pointer backward
     else
     {
-		if(sparcRegisters.psr.cwp == 0)
-			return sparcRegisters.registerSet + (REGISTER_WINDOW_WIDTH * (sparcRegisters.registerWindows - 1));
-		else
-			return sparcRegisters.cwptr - REGISTER_WINDOW_WIDTH;
+            if(sparcRegisters.psr.cwp == 0)
+                    return sparcRegisters.registerSet + (REGISTER_WINDOW_WIDTH * (sparcRegisters.registerWindows - 1));
+            else
+                    return sparcRegisters.cwptr - REGISTER_WINDOW_WIDTH;
     }
 }
 
@@ -213,8 +228,8 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
 	
         /* 
          Register name is copied to a temporary variable to avoid segmentation fault.
-         gcc core dump analysis shows that it faults while trying to modify a string literal
-         from an invocation like setRegister("%o7", registerValue) from CALL type instruction 
+         Program core dump analysis shows that it faults while trying to modify a string literal
+         from an invocation like setRegister("%o7", registerValue) from CALL instruction 
         */
         strcpy(sparcRegisterString, sparcRegister); 
         sparcRegister = sparcRegisterString;
@@ -234,7 +249,6 @@ void setRegister(char* sparcRegister, unsigned long registerValue)
 	{
                 sparcRegisters.psr = castUnsignedLongToPSR(registerValue);
                 sparcRegisters.cwptr = sparcRegisters.registerSet + sparcRegisters.psr.cwp * REGISTER_WINDOW_WIDTH;
-		//sparcRegisters.cwptr = sparcRegisters.registerSet + (sparcRegisters.psr.cwp - 1) * REGISTER_WINDOW_WIDTH;
 	}
         
         if(!strcmp(sparcRegister, "fsr"))
@@ -321,10 +335,8 @@ int saveRegisters()
 	else
 	{
 		sparcRegisters.cwptr = getWindowPointer(-1);
-		if(sparcRegisters.psr.cwp == 0)
-		 sparcRegisters.psr.cwp = sparcRegisters.registerWindows - 1;
-		else
-		 sparcRegisters.psr.cwp--;
+                sparcRegisters.psr.cwp = nextCWP;
+
 		return RET_SUCCESS;
 	}
 }
@@ -335,19 +347,19 @@ int restoreRegisters()
 {
 	unsigned long regPSR, regWIM;
 	struct processor_status_register psr;
-	// short nextCWP;
+	short nextCWP;
 
 	regPSR = getRegister("psr");
         psr = castUnsignedLongToPSR(regPSR);
 	regWIM = getRegister("wim");
 
-	/*if(psr.cwp == (sparcRegisters.registerWindows - 1))
+	if(psr.cwp == (sparcRegisters.registerWindows - 1))
 		nextCWP = 0;
 	else
-		nextCWP = sparcRegisters.psr.cwp + 1;*/
+		nextCWP = sparcRegisters.psr.cwp + 1;
 
 
-	if(getBit(regWIM, psr.cwp + 1))
+	if(getBit(regWIM, nextCWP))
 	{
 		handleTrap(WINDOWS_UNDERFLOW, sparcRegisters.pc);
 		return RET_FAILURE;
@@ -355,10 +367,8 @@ int restoreRegisters()
 	else
 	{
 		sparcRegisters.cwptr = getWindowPointer(1);
-		if(sparcRegisters.psr.cwp == (sparcRegisters.registerWindows - 1))
-		 sparcRegisters.psr.cwp = 0;
-		else
-		 sparcRegisters.psr.cwp++;
+                sparcRegisters.psr.cwp = nextCWP;
+
 		return RET_SUCCESS;
 	}
 }
