@@ -529,11 +529,24 @@ int processSimulatorCommand(char* simulatorCommand)
                 char* registerValue, *cpuInstruction, *disassembledInstruction;
                 char sparcRegister[3];
                 unsigned long regPC;
-                unsigned short count;
+                unsigned short count, window, currentRegisterWindow;
                 sparcRegister[2] = '\0';
 
+                // Record present register window
+                currentRegisterWindow = getRegisterWindow();
+                
+                // Display different register window
+                if(firstParametre != NULL && secondParametre == NULL)
+                {
+                        window = firstParametre[1] - '0';
+                        setRegisterWindow(window);
+                }
+                
+                // Set a register value
                 if(firstParametre != NULL && secondParametre != NULL)
                         setRegister(firstParametre, secondNumericParametre);
+                
+                // Display processor registers
                 else
                 {
                         printf("\n\t\t    INS\t\t   LOCALS\t    OUTS\t  GLOBALS\n\n");
@@ -598,13 +611,17 @@ int processSimulatorCommand(char* simulatorCommand)
                         printf("\n\tnpc: %s\t\t", registerValue);
                         displayWord(cpuInstruction, 1);
                         printf("\t%s", disassembledInstruction);
+                        
                         free(cpuInstruction);
                         free(disassembledInstruction);
                         free(registerValue);
 
                         printf("\n\n");
+                        
+                        // Set register window back to present one
+                        setRegisterWindow(currentRegisterWindow);
                 }
-
+                
                 return RET_SUCCESS;
         }
 

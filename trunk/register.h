@@ -96,6 +96,8 @@ struct registers
 void initializeRegisters();
 void resetSimulator();
 char* displayRegister(unsigned long registerValue);
+unsigned short getRegisterWindow();
+void setRegisterWindow(unsigned short registerWindow);
 unsigned long* getWindowPointer(int direction);
 unsigned long getRegister(char* sparcRegister);
 void setRegister(char* sparcRegister, unsigned long registerValue);
