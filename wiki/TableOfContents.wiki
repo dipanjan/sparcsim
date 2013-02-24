@@ -3,7 +3,7 @@
 = _Table of Contents_ =
 ----
 
-* [SPARCSIMAnOverview An Overview]
+* [Overview An Overview]
 
 * [SystemComponents System Components]
     * [UserInterface User Interface]
