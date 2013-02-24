@@ -1,6 +1,7 @@
 #summary One-sentence summary of this page.
 
 = _Register Manager _ =
+----
 
 Register manager handles the reading and writing ofprocessor registers and also the shifting of windows in response to SAVE and RESTOREassembly commands. Till this point, only Integer registers, i.e. i0 - i7, l0 - l7, o0 -o7 g0 - g7 and PC, NPC, PSR (Processor Status Register), TBR (Trap Base Register), Y and WIM (Window Invalid Mask) are supported.
 
