@@ -1,4 +1,5 @@
-= User Interface =
+= _User Interface_ =
+----
 
 SPARCSIM UI is text based. Simple text commands areused to operate the simulator. Rationales behind the command line interface are as follows: 
 
