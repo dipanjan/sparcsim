@@ -6,7 +6,7 @@ Register manager handles the reading and writing ofprocessor registers and also 
 
 http://img713.imageshack.us/img713/3475/registerwindowi.png
 
-<table width="1200">
+<table width="700">
 <tr>
 <td width="30%"></td>
 <td width="40%"><b><u>SPARC Register Window architecture </u></b></td>
