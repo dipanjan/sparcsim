@@ -1,8 +1,5 @@
 #summary Table of Contents
 
-= _Table of Contents_ =
-----
-
 * [Overview An Overview]
 
 * [SystemComponents System Components]
