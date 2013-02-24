@@ -1,4 +1,5 @@
 = _SPARCSIM Commands_ =
+----
 
 SPARCSIM, as a simulator supports the following command set. End user issues these commands to operate the simulator. 
 
