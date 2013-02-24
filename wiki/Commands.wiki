@@ -18,7 +18,7 @@ SPARCSIM, as a simulator supports the following command set. End user issues the
 || [br]eak || print all breakpoints ||
 || [r]eg [reg] [val] || show/set integer registers ||
 || [d]is [addr] [count] || disassemble [count] instructions at address [addr] ||
-|| [c]ont [cnt] || continue execution for [cnt] instructions 
+|| [c]ont [cnt] || continue execution for [cnt] instructions ||
 || [g]o `<addr`> [cnt] || start execution at `<addr`> ||
 || [ru]n [cnt] || reset and start execution at address zero ||
 || [h]elp || display this help ||
