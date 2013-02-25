@@ -1,8 +1,6 @@
-#summary Table of Contents
+ * [Overview An Overview]
 
-* [Overview An Overview]
-
-* [SystemComponents System Components]
+ * [SystemComponents System Components]
     * [UserInterface User Interface]
     * [CallDispatcher Call Dispatcher]
     * [Loader Loader]
@@ -15,14 +13,14 @@
     * [ThirdPartyLibrary Third - party Library]
     * [ConfigurationFile Configuration File]
 
-* [Commands Simulator Commands]
+ * [Commands Simulator Commands]
 
-* [DevelopmentEnvironment Development Environment]
+ * [DevelopmentEnvironment Development Environment]
 
-* [Simulation Simulation]
+ * [Simulation Simulation]
 
-* [CodeOrganization Code Organization]
+ * [CodeOrganization Code Organization]
 
-* [References References]
+ * [References References]
 
-* [FutureScope FutureScope]
+ * [FutureScope FutureScope]
