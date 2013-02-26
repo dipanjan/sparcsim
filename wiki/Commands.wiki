@@ -6,7 +6,7 @@ SPARCSIM, as a simulator supports the following command set. End user issues the
 || *Command* || *Action* ||
 || sparcsim `[file_name`] || load a file into simulator memory ||
 || sparcsim -d `[file_name`] || disassemble SPARC ELF binary ||
-|| sparcsim -b `[file_name`] || execute a batch file of SPARCSIM commands ||
+|| sparcsim -c `[file_name`] || execute a batch file of SPARCSIM commands ||
 || `[ba`]tch `<file`> || execute a batch file of SPARCSIM commands ||
 || `[re`]set || reset simulator ||
 || `[l`]oad `<file_name`> || load a file into simulator memory ||
@@ -16,7 +16,11 @@ SPARCSIM, as a simulator supports the following command set. End user issues the
 || `[br`]eak `<addr`> || add a breakpoint at `<addr`> ||
 || `[de`]l `<num`> || delete breakpoint `<num`> ||
 || `[br`]eak || print all breakpoints ||
-|| `[r`]eg `[reg`] `[val`] || show/set integer registers ||
+|| `[wa`]tch `<addr`> || add a watchpoint at `<addr`> ||
+|| `[t`]ra `<inst_count`> || trace `<inst_count`> instructions ||
+|| `[f`]loat || show floating point registers ||
+|| `[r`]eg `[reg`] `[val`] || show/set integer registers, display register windows, e.g. reg w2 ||
+|| `[p`]sr || unpacks PSR fields ||
 || `[d`]is `[addr`] `[count`] || disassemble `[count`] instructions at address `[addr`] ||
 || `[c`]ont `[cnt`] || continue execution for `[cnt`] instructions ||
 || `[g`]o `<addr`> `[cnt`] || start execution at `<addr`> ||
