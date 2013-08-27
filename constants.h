@@ -2,18 +2,18 @@
 #define CONSTANTS_H
 
 // Generic
-#define RET_QUIT     						 0
-#define RET_FAILURE 						-1
-#define RET_SUCCESS  						 1
-#define RET_NOTACOMMAND 					 2
-#define RET_BREAKPOINT   					 3
-#define RET_WATCHPOINT   					 4
-#define RET_TRAP                                                 5
+#define RET_QUIT     					 0
+#define RET_FAILURE                                     -1
+#define RET_SUCCESS  					 1
+#define RET_NOTACOMMAND 				 2
+#define RET_BREAKPOINT   				 3
+#define RET_WATCHPOINT                                   4
+#define RET_TRAP                                         5
 
 
 
 // simulator.c
-#define MAX_INPUT_LENGTH 					50
+#define MAX_INPUT_LENGTH 				50
 
 
 

@@ -8,6 +8,13 @@
 
 
 
+struct instruction_fields
+{
+    unsigned short op, op2, op3, opf;
+} sparc_instruction_fields;
+
+
+
 char* decodeInstruction(char* cpuInstruction, unsigned long regPC);
 char* getIntegerRegisterName(unsigned long registerIdentifier);
 char* getFloatingRegisterName(unsigned long registerIdentifier);

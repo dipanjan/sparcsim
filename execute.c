@@ -6,6 +6,9 @@ struct watchPointInfo* watchInfo;
 
 
 
+/*
+ * Given an instruction disassembled in assembly, executes it.
+ */
 int executeInstruction(char* disassembledInstruction)
 {
 	char tokens[10][20];
@@ -44,6 +47,20 @@ int executeInstruction(char* disassembledInstruction)
 			strcpy(tokens[++count], token);
 	}
 	while(token);
+        
+        
+        // Check for fp_disabled trap
+        if(((sparc_instruction_fields.op == 0 && sparc_instruction_fields.op2 == 6) || // FBfcc instruction
+            ((sparc_instruction_fields.op == 2) && (sparc_instruction_fields.op3 == 0x34 || sparc_instruction_fields.op3 == 0x35)) || // FPop instruction
+             (sparc_instruction_fields.op3 >= 0x20 && sparc_instruction_fields.op3 <= 0x27 && sparc_instruction_fields.op3 != 0x22
+                )) &&  // Floating point load/store
+             (psr.ef == 0)) // FP disabled
+        {
+                feclearexcept(FE_ALL_EXCEPT);   // Clear IEEE 754 flags on host processor
+                setTrapCode(FP_DISABLED, "Floating point unit is disabled as psr.EF = 0"); 
+                return RET_TRAP;
+        }
+        
         
         
         
@@ -87,7 +104,7 @@ int executeInstruction(char* disassembledInstruction)
 	
 	if(!strcmp(tokens[0], "unimp"))
 	{
-		handleTrap(ILLEGAL_INSTRUCTION, regPC);
+		setTrapCode(ILLEGAL_INSTRUCTION, "Attempt to execute UNIMP instruction");
 		return RET_FAILURE;
 	}
 	
@@ -375,8 +392,8 @@ int executeInstruction(char* disassembledInstruction)
 	// Decode Format - III operands for instruction having format: <opcode> [address], <regRD>
 	index = 1;
 	memoryAddress = getAddressValue(tokens, &index);
-	
-	
+        
+        
         if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "ldsb")))
 	{
 		char* dataWord;
@@ -399,7 +416,7 @@ int executeInstruction(char* disassembledInstruction)
 
                 if(is_mem_address_not_aligned(memoryAddress, HALFWORD_ALIGN))
                 {
-                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Source memory address not half word aligned");
                     return RET_TRAP;
                 }
                 
@@ -434,7 +451,7 @@ int executeInstruction(char* disassembledInstruction)
 
                 if(is_mem_address_not_aligned(memoryAddress, HALFWORD_ALIGN))
                 {
-                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Source memory address not half word aligned");
                     return RET_TRAP;
                 }
                 
@@ -452,9 +469,23 @@ int executeInstruction(char* disassembledInstruction)
 		char* dataWord;
 		unsigned long word, hexDigit;
 
+                if(tokens[index][0] == 'f' && is_register_mis_aligned(tokens[index]))
+                {
+                    // A floating-point load instruction
+                    setFTTTrapCode(INVALID_FP_REGISTER, FP_EXCEPTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                else
+                if(is_register_mis_aligned(tokens[index]))
+                {
+                    // An integer load instruction
+                    setTrapCode(ILLEGAL_INSTRUCTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                
                 if(is_mem_address_not_aligned(memoryAddress, WORD_ALIGN))
                 {
-                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Source memory address not word aligned");
                     return RET_TRAP;
                 }
                 
@@ -474,9 +505,23 @@ int executeInstruction(char* disassembledInstruction)
 		char* dataWord;
 		unsigned long word, hexDigit;
 
+                if(tokens[index][1] == 'f' && is_register_mis_aligned(tokens[index]))
+                {
+                    // A floating-point load instruction
+                    setFTTTrapCode(INVALID_FP_REGISTER, FP_EXCEPTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                else
+                if(is_register_mis_aligned(tokens[index]))
+                {
+                    // An integer load instruction
+                    setTrapCode(ILLEGAL_INSTRUCTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                
                 if(is_mem_address_not_aligned(memoryAddress, DOUBLEWORD_ALIGN))
                 {
-                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Source memory address not double word aligned");
                     return RET_TRAP;
                 }
                 
@@ -517,7 +562,7 @@ int executeInstruction(char* disassembledInstruction)
                 
                 if(is_mem_address_not_aligned(memoryAddress, WORD_ALIGN))
                 {
-                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Destination memory address not word aligned");
                     return RET_TRAP;
                 }
                 
@@ -536,13 +581,56 @@ int executeInstruction(char* disassembledInstruction)
 	{
 		if(is_mem_address_not_aligned(memoryAddress, WORD_ALIGN))
                 {
-                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Destination memory address not word aligned");
                     return RET_TRAP;
                 }
                 
                 setRegister(tokens[index], regPC);
 		setRegister("pc", regnPC);
 		setRegister("npc", memoryAddress);
+		return RET_SUCCESS;
+	}
+        else
+	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "rett")))
+	{
+                if(psr.et && !psr.s)
+                {
+                    setTrapCode(PRIVILEGED_INSTRUCTION, "psr.et = 1 and psr.s = 0");
+                    return RET_TRAP;
+                }
+                
+                if(psr.et && psr.s)
+                {
+                    setTrapCode(ILLEGAL_INSTRUCTION, "psr.et = 1 and psr.s = 1");
+                    return RET_TRAP;
+                }
+                
+                if(!psr.et)
+                {
+                    if(!psr.s)
+                    {
+                        setTrapCode(PRIVILEGED_INSTRUCTION, "psr.et = 0 and psr.s = 0");
+                        return RET_TRAP;
+                    }
+                    else
+                    if(is_mem_address_not_aligned(memoryAddress, WORD_ALIGN))
+                    {
+                        setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Destination memory address not word aligned");
+                        return RET_TRAP;
+                    }
+                    else
+                    if(restoreRegisters() == RET_TRAP)
+                        return RET_TRAP;
+                }
+                
+                setRegister(tokens[index], regPC);
+		setRegister("pc", regnPC);
+		setRegister("npc", memoryAddress);
+                
+                psr.s = psr.ps;
+                psr.et = 1;
+                setPSR(castPSRToUnsignedLong(psr));
+                
 		return RET_SUCCESS;
 	}
 
@@ -578,7 +666,7 @@ int executeInstruction(char* disassembledInstruction)
                 
                 if(is_mem_address_not_aligned(memoryAddress, HALFWORD_ALIGN))
                 {
-                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Destination memory address not half word aligned");
                     return RET_TRAP;
                 }
                 
@@ -595,7 +683,7 @@ int executeInstruction(char* disassembledInstruction)
 	{
                 if(is_mem_address_not_aligned(memoryAddress, WORD_ALIGN))
                 {
-                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Destination memory address not word aligned");
                     return RET_TRAP;
                 }
                 
@@ -612,9 +700,23 @@ int executeInstruction(char* disassembledInstruction)
 	{
                 unsigned long regNextRD;
                 
+                if(tokens[1][1] == 'f' && is_register_mis_aligned(tokens[1]))
+                {
+                    // A floating-point load instruction
+                    setFTTTrapCode(INVALID_FP_REGISTER, FP_EXCEPTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                else
+                if(is_register_mis_aligned(tokens[1]))
+                {
+                    // An integer load instruction
+                    setTrapCode(ILLEGAL_INSTRUCTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                
                 if(is_mem_address_not_aligned(memoryAddress, DOUBLEWORD_ALIGN))
                 {
-                    handleTrap(MEM_ADDRESS_NOT_ALIGNED, regPC);
+                    setTrapCode(MEM_ADDRESS_NOT_ALIGNED, "Destination memory address not double word aligned");
                     return RET_TRAP;
                 }
                 
@@ -741,7 +843,7 @@ int executeInstruction(char* disassembledInstruction)
 		regRD = regRS1 + reg_or_imm;
                 if(taggedAddSubtract(regRS1, reg_or_imm, regRD, 1))
                 {
-                    handleTrap(TAG_OVERFLOW, regPC);
+                    setTrapCode(TAG_OVERFLOW, "Tag overflow has occurred");
                     return RET_TRAP;
                 }
                 setRegister(tokens[3], regRD);
@@ -761,7 +863,7 @@ int executeInstruction(char* disassembledInstruction)
 		regRD = regRS1 - reg_or_imm;
                 if(taggedAddSubtract(regRS1, reg_or_imm, regRD, 1))
                 {
-                    handleTrap(TAG_OVERFLOW, regPC);
+                    setTrapCode(TAG_OVERFLOW, "Tag overflow has occurred");
                     return RET_TRAP;
                 }
                 setRegister(tokens[3], regRD);
@@ -839,6 +941,12 @@ int executeInstruction(char* disassembledInstruction)
 		unsigned long long dividend, quotient;
 		unsigned long regY;
 
+                if(reg_or_imm == 0)
+                {
+                    setTrapCode(DIVISION_BY_ZERO, "Attempt to divide by zero");
+                    return RET_TRAP;
+                }
+                
 		regY = getRegister("y");
 		// dividend = (dividend << 32) | regY;
                 dividend = regY;
@@ -858,6 +966,12 @@ int executeInstruction(char* disassembledInstruction)
                 signed long long signed_reg_or_imm = (signed long long)reg_or_imm;
 		unsigned long regY;
 
+                if(reg_or_imm == 0)
+                {
+                    setTrapCode(DIVISION_BY_ZERO, "Attempt to divide by zero");
+                    return RET_TRAP;
+                }
+                
 		regY = getRegister("y");
                 dividend = regY;
 		dividend = (dividend << 32) | regRS1; 
@@ -878,6 +992,12 @@ int executeInstruction(char* disassembledInstruction)
 		unsigned long long dividend, quotient;
 		unsigned long regY;
 
+                if(reg_or_imm == 0)
+                {
+                    setTrapCode(DIVISION_BY_ZERO, "Attempt to divide by zero");
+                    return RET_TRAP;
+                }
+                
 		regY = getRegister("y");
 		// dividend = (dividend << 32) | regY;
                 dividend = regY;
@@ -903,6 +1023,12 @@ int executeInstruction(char* disassembledInstruction)
                 signed long long signed_reg_or_imm = (signed long long)reg_or_imm;
 		unsigned long regY;
 
+                if(reg_or_imm == 0)
+                {
+                    setTrapCode(DIVISION_BY_ZERO, "Attempt to divide by zero");
+                    return RET_TRAP;
+                }
+                
 		regY = getRegister("y");
                 dividend = regY;
 		dividend = (dividend << 32) | regRS1; 
@@ -930,6 +1056,8 @@ int executeInstruction(char* disassembledInstruction)
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fadds")))
 	{
                 float_regRD = float_regRS1 + float_regRS2;
+                if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
                 convertFloat.hexToFloat = float_regRD;
 		setRegister(tokens[3], convertFloat.floatToHex); 
 	}
@@ -937,7 +1065,15 @@ int executeInstruction(char* disassembledInstruction)
         else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "faddd")))
 	{
+                if(is_register_mis_aligned(tokens[1]) || is_register_mis_aligned(tokens[2]) || is_register_mis_aligned(tokens[3]))
+                {
+                    setFTTTrapCode(INVALID_FP_REGISTER, FP_EXCEPTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                
                 double_regRD = double_regRS1 + double_regRS2;
+                if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
                 convertDouble.hexToDouble = double_regRD;
 		setRegister(tokens[3], convertDouble.doubleToHex[0]);
                 setRegister(getNextRegister(tokens[3]), convertDouble.doubleToHex[1]);
@@ -947,6 +1083,8 @@ int executeInstruction(char* disassembledInstruction)
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fsubs")))
 	{
                 float_regRD = float_regRS1 - float_regRS2;
+                if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
                 convertFloat.hexToFloat = float_regRD;
 		setRegister(tokens[3], convertFloat.floatToHex); 
 	}
@@ -954,7 +1092,15 @@ int executeInstruction(char* disassembledInstruction)
         else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fsubd")))
 	{
+                if(is_register_mis_aligned(tokens[1]) || is_register_mis_aligned(tokens[2]) || is_register_mis_aligned(tokens[3]))
+                {
+                    setFTTTrapCode(INVALID_FP_REGISTER, FP_EXCEPTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                
                 double_regRD = double_regRS1 - double_regRS2;
+                if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
                 convertDouble.hexToDouble = double_regRD;
 		setRegister(tokens[3], convertDouble.doubleToHex[0]);
                 setRegister(getNextRegister(tokens[3]), convertDouble.doubleToHex[1]);
@@ -964,6 +1110,8 @@ int executeInstruction(char* disassembledInstruction)
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fmuls")))
 	{
                 float_regRD = float_regRS1 * float_regRS2;
+                if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
                 convertFloat.hexToFloat = float_regRD;
 		setRegister(tokens[3], convertFloat.floatToHex); 
 	}
@@ -971,7 +1119,15 @@ int executeInstruction(char* disassembledInstruction)
         else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fmuld")))
 	{
+                if(is_register_mis_aligned(tokens[1]) || is_register_mis_aligned(tokens[2]) || is_register_mis_aligned(tokens[3]))
+                {
+                    setFTTTrapCode(INVALID_FP_REGISTER, FP_EXCEPTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                
                 double_regRD = double_regRS1 * double_regRS2;
+                if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
                 convertDouble.hexToDouble = double_regRD;
 		setRegister(tokens[3], convertDouble.doubleToHex[0]);
                 setRegister(getNextRegister(tokens[3]), convertDouble.doubleToHex[1]);
@@ -981,6 +1137,8 @@ int executeInstruction(char* disassembledInstruction)
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fdivs")))
 	{
                 float_regRD = float_regRS1 / float_regRS2;
+                if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
                 convertFloat.hexToFloat = float_regRD;
 		setRegister(tokens[3], convertFloat.floatToHex);
 	}
@@ -988,7 +1146,15 @@ int executeInstruction(char* disassembledInstruction)
         else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fdivd")))
 	{
+                if(is_register_mis_aligned(tokens[1]) || is_register_mis_aligned(tokens[2]) || is_register_mis_aligned(tokens[3]))
+                {
+                    setFTTTrapCode(INVALID_FP_REGISTER, FP_EXCEPTION, "Destination is an odd-even register pair");
+                    return RET_TRAP;
+                }
+                
                 double_regRD = double_regRS1 / double_regRS2;
+                if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
                 convertDouble.hexToDouble = double_regRD;
 		setRegister(tokens[3], convertDouble.doubleToHex[0]);
                 setRegister(getNextRegister(tokens[3]), convertDouble.doubleToHex[1]);
@@ -1009,6 +1175,11 @@ int executeInstruction(char* disassembledInstruction)
         else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fcmps")))
 	{
+            if(isSNaN32(float_regRS1) || isSNaN32(float_regRS2))
+            {
+                raise_invalid_exception("Either or both the operands are SNaN");
+                return RET_TRAP;
+            }
             if(float_regRS1 == float_regRS2)
                 updateFCC(0);
             else
@@ -1024,6 +1195,11 @@ int executeInstruction(char* disassembledInstruction)
         else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fcmpes")))
 	{
+            if(isSNaN32(float_regRS1) || isQNaN32(float_regRS1) || isSNaN32(float_regRS2) || isQNaN32(float_regRS2))
+            {
+                raise_invalid_exception("Either or both the operands are SNaN/QNaN");
+                return RET_TRAP;
+            }
             if(float_regRS1 == float_regRS2)
                 updateFCC(0);
             else
@@ -1039,6 +1215,11 @@ int executeInstruction(char* disassembledInstruction)
         else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fcmpd")))
 	{
+            if(isSNaN64(double_regRS1) || isSNaN64(double_regRS1))
+            {
+                raise_invalid_exception("Either or both the operands are SNaN");
+                return RET_TRAP;
+            }
             if(double_regRS1 == double_regRS2)
                 updateFCC(0);
             else
@@ -1054,6 +1235,11 @@ int executeInstruction(char* disassembledInstruction)
         else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fcmped")))
 	{
+            if(isSNaN64(double_regRS1) || isQNaN64(double_regRS1) || isSNaN64(double_regRS2) || isQNaN64(double_regRS2))
+            {
+                raise_invalid_exception("Either or both the operands are SNaN/QNaN");
+                return RET_TRAP;
+            }
             if(double_regRS1 == double_regRS2)
                 updateFCC(0);
             else
@@ -1153,8 +1339,8 @@ int executeInstruction(char* disassembledInstruction)
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "save")))
 	{
-		if(saveRegisters() == RET_FAILURE)
-			return RET_FAILURE;
+		if(saveRegisters() == RET_TRAP)
+			return RET_TRAP;
 		else
 			setRegister(tokens[3], regRS1 + reg_or_imm);
 	}
@@ -1162,19 +1348,42 @@ int executeInstruction(char* disassembledInstruction)
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "restore")))
 	{
-		if(restoreRegisters() == RET_FAILURE)
-			return RET_FAILURE;
+		if(restoreRegisters() == RET_TRAP)
+			return RET_TRAP;
 		else
 			setRegister(tokens[3], regRS1 + reg_or_imm);
 	}
 	
         else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "rd")))
+        {
+                if(!strcmp(tokens[1], "psr") && !psr.s)
+                {
+                    setTrapCode(PRIVILEGED_INSTRUCTION, "Attempt to read PSR from user mode");
+                    return RET_TRAP;
+                }
+                
+                if(!strcmp(tokens[1], "wim") && !psr.s)
+                {
+                    setTrapCode(PRIVILEGED_INSTRUCTION, "Attempt to read WIM from user mode");
+                    return RET_TRAP;
+                }
+                
+                if(!strcmp(tokens[1], "tbr") && !psr.s)
+                {
+                    setTrapCode(PRIVILEGED_INSTRUCTION, "Attempt to read TBR from user mode");
+                    return RET_TRAP;
+                }
+                
                 setRegister(tokens[2], getRegister(tokens[1]));
+        }
         
 	else
 	if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "wr")))
-		setRegister(tokens[3], regRS1 ^ reg_or_imm);
+        {
+		if(setRegister(tokens[3], regRS1 ^ reg_or_imm) == RET_TRAP)
+                    return RET_TRAP;
+        }
         
         if(!isFormatIIIOpcodeFound)
 	{
@@ -1209,7 +1418,9 @@ int executeInstruction(char* disassembledInstruction)
                 roundedInteger = (unsigned long)floorf(float_regRS2);
             else
                 roundedInteger = (unsigned long)ceilf(float_regRS2);
-                
+            
+            if (is_ieee_754_trap() == RET_TRAP)
+                return RET_TRAP;
             setRegister(tokens[2], roundedInteger);
 	}
 
@@ -1222,7 +1433,9 @@ int executeInstruction(char* disassembledInstruction)
                 roundedInteger = (unsigned long)floor(double_regRS2);
             else
                 roundedInteger = (unsigned long)ceil(double_regRS2);
-                
+            
+            if (is_ieee_754_trap() == RET_TRAP)
+                return RET_TRAP;
             setRegister(tokens[2], (unsigned long)(roundedInteger & 0x00000000FFFFFFFF));
             setRegister(getNextRegister(tokens[2]), (unsigned long)(roundedInteger >> 32));
 	}
@@ -1231,6 +1444,8 @@ int executeInstruction(char* disassembledInstruction)
         if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fstod")))
 	{
             convertDouble.hexToDouble = (double)float_regRS2;
+            if (is_ieee_754_trap() == RET_TRAP)
+                return RET_TRAP;
             
             setRegister(tokens[2], convertDouble.doubleToHex[0]);
             setRegister(getNextRegister(tokens[2]), convertDouble.doubleToHex[1]);
@@ -1240,6 +1455,8 @@ int executeInstruction(char* disassembledInstruction)
         if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fdtos")))
 	{
             convertFloat.hexToFloat = (float)double_regRS2;
+            if (is_ieee_754_trap() == RET_TRAP)
+                return RET_TRAP;
             
             setRegister(tokens[2], convertFloat.floatToHex);
 	}
@@ -1251,6 +1468,8 @@ int executeInstruction(char* disassembledInstruction)
             
             signed_regRS2 = (signed long)regRS2;
             convertFloat.hexToFloat = (float)signed_regRS2;
+            if (is_ieee_754_trap() == RET_TRAP)
+                return RET_TRAP;
             
             setRegister(tokens[2], convertFloat.floatToHex);
         }
@@ -1258,6 +1477,12 @@ int executeInstruction(char* disassembledInstruction)
         else
         if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fitod")))
         {
+            if(is_register_mis_aligned(tokens[1]) || is_register_mis_aligned(tokens[2]))
+            {
+                setFTTTrapCode(INVALID_FP_REGISTER, FP_EXCEPTION, "Source/Destination is an odd-even register pair");
+                return RET_TRAP;
+            }
+            
             signed long signed_regRS2;
             
             signed_regRS2 = (signed long)regRS2;
@@ -1271,7 +1496,8 @@ int executeInstruction(char* disassembledInstruction)
         if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fsqrts")))
         {
             convertFloat.hexToFloat = powf(float_regRS2, 0.5);
-            
+            if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
             setRegister(tokens[2], convertFloat.floatToHex);
         }
         
@@ -1279,7 +1505,8 @@ int executeInstruction(char* disassembledInstruction)
         if(!(isFormatIIIOpcodeFound = strcmp(tokens[0], "fsqrtd")))
         {
             convertDouble.hexToDouble = pow(double_regRS2, 0.5);
-            
+            if (is_ieee_754_trap() == RET_TRAP)
+                    return RET_TRAP;
             setRegister(tokens[2], convertDouble.doubleToHex[0]);
             setRegister(getNextRegister(tokens[2]), convertDouble.doubleToHex[1]);
         }
@@ -1298,11 +1525,18 @@ int executeInstruction(char* disassembledInstruction)
 
 
 
+/*
+ * Returns the value contained in a register or sign-extended simm13 field
+ * in instructions of the form "<opcode> <regRS1>, <reg_or_imm>, <regRS2>"
+ */
 unsigned long getReg_Or_ImmValue(char* reg_or_imm)
 {
+        // The operand is a register.
 	if((reg_or_imm[0] == '%') || (reg_or_imm[0] == 'g') || (reg_or_imm[0] == 'o') ||
 			(reg_or_imm[0] == 'l') || (reg_or_imm[0] == 'i'))
 		return getRegister(reg_or_imm);
+        
+        // The operand is an immediate.
 	else
 		// Note: strtoul() has been used here to interpret the bit pattern
 		// as signed long instead of unsigned long as translated by strtol()
@@ -1311,18 +1545,26 @@ unsigned long getReg_Or_ImmValue(char* reg_or_imm)
 
 
 
+/*
+ * Returns the value specified as "[<register1> + <register2>]" or
+ * "[<register> + <immediate>]".
+ */
 unsigned long getAddressValue(char tokens[][20], unsigned short* index)
 {
 	unsigned long memoryAddress;
 
+        // Search for opening bracket ([)
 	if(!strcmp(tokens[*index], "["))
 		(*index)++;
 	
+        // Get the value in first register
 	memoryAddress = getRegister(tokens[*index]);
 
+        // Search for addition symbol (+) to get the value of second register or immediate.
 	if(!strcmp(tokens[++(*index)], "+"))
 		memoryAddress += getReg_Or_ImmValue(tokens[++(*index)]);
 
+        // Search for closing bracket (])
 	(*index) += (!strcmp(tokens[(*index) + 1], "]")) ? 2 : 1;
 
 	return memoryAddress;
@@ -1330,6 +1572,9 @@ unsigned long getAddressValue(char tokens[][20], unsigned short* index)
 
 
 
+/*
+ * Updates Integer Condition Code (ICC) bits based on the result of addition.
+ */
 void updateICCAdd(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD)
 {
 	/* Disambiguation between CARRY and OVERFLOW flag:
@@ -1368,6 +1613,9 @@ void updateICCAdd(unsigned long regRS1, unsigned long reg_or_imm, unsigned long 
 
 
 
+/*
+ * Updates Integer Condition Code (ICC) bits based on the result of subtraction.
+ */
 void updateICCSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD)
 {
 	/* Disambiguation between CARRY and OVERFLOW flag:
@@ -1407,6 +1655,12 @@ void updateICCSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned 
 
 
 
+/*
+ * Updates Integer Condition Code (ICC) bits based on the result of tagged addition and subtraction.
+ * If isTVOpcode = 1, the opcodes will be treated as TADDCCTV and TSUBCCTV.
+ * If isTVOpcode = 0, the opcodes will be treated as TADDCC and TSUBCC.
+ * Returns 1, if tagged overflow has occurred.
+ */
 unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm, unsigned long regRD, unsigned short isTVOpcode)
 {
         unsigned long regPSR;
@@ -1445,7 +1699,6 @@ unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm,
             // Set PSR back to modify ICC bits
             setRegister("psr", regPSR);
         }
-       
         
         return isTaggedOverflow;
                 
@@ -1453,6 +1706,9 @@ unsigned short taggedAddSubtract(unsigned long regRS1, unsigned long reg_or_imm,
 
 
 
+/*
+ * Updates Integer Condition Code (ICC) bits based on the result of multiplication and logical operations.
+ */
 void updateICCMulLogical(unsigned long regRD)
 {
 	unsigned long regPSR;	
@@ -1481,6 +1737,9 @@ void updateICCMulLogical(unsigned long regRD)
 
 
 
+/*
+ * Updates Integer Condition Code (ICC) bits based on the result of division.
+ */
 void updateICCDiv(unsigned long regRD, short isOverflow)
 {
 	unsigned long regPSR;
@@ -1509,6 +1768,9 @@ void updateICCDiv(unsigned long regRD, short isOverflow)
 
 
 
+/*
+ * Updates Floating-point Condition Code (FCC) bits.
+ */
 void updateFCC(unsigned short fcc)
 {
 	unsigned long regFSR;
@@ -1528,6 +1790,13 @@ void updateFCC(unsigned short fcc)
 
 
 
+/*
+ * Serves as a wrapper around executeInstruction() method.
+ * Each time it is invoked, it checks whether the PC value 
+ * has hit a breakpoint, if not then disassembles the instruction 
+ * word, saves information about the instruction to be executed,
+ * executes it and returns a success or failure.
+ */
 int executeNextInstruction()
 {
     char *cpuInstruction, *disassembledInstruction;
@@ -1570,6 +1839,10 @@ int executeNextInstruction()
 
 
 
+/*
+ * Fills up an instance of watchPointInfo structure with the <memoryAddress> 
+ * being accessed and <newData> being attempted to be written.
+ */
 void setWatchPointInfo(unsigned long memoryAddress, unsigned long newData)
 {
     watchInfo = (struct watchPointInfo*)malloc(sizeof(struct watchPointInfo));
@@ -1581,16 +1854,11 @@ void setWatchPointInfo(unsigned long memoryAddress, unsigned long newData)
 
 
 
+/*
+ * Returns a pointer to an instance of watchPointInfo structure 
+ * filled up with information on last watchpoint encountered.
+ */
 struct watchPointInfo* getWatchPointInfo()
 {
     return watchInfo;
 }
-
-
-
-/*int main()
-{
-	char disassembledInstruction[] = "sethi %hi(0x40000000), %g7";
-	executeInstruction(disassembledInstruction, 1);
-	return RET_SUCCESS 0;
-}*/

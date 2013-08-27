@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <fenv.h>
 #include <string.h>
 #include <register.h>
 #include <memory.h>
@@ -10,6 +11,7 @@
 #include <trap.h>
 #include <limits.h>
 #include <bits.h>
+#include <misc.h>
 #include <breakpoint.h>
 #include <decode.h>
 
@@ -26,22 +28,6 @@
 #define FLOAT_UNORDERED                          3
 
 
-
-union 
-{
-        unsigned long floatToHex;
-        float hexToFloat;
-}convertFloat;
-
-
-
-union 
-{
-        unsigned long doubleToHex[2];
-        double hexToDouble;
-}convertDouble;
-
-       
 
 struct watchPointInfo
 {
