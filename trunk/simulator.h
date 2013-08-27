@@ -10,6 +10,7 @@
 #include <register.h>
 #include <breakpoint.h>
 #include <execute.h>
+#include <trap.h>
 #include <constants.h>
 
 

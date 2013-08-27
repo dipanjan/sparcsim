@@ -2,6 +2,22 @@
 
 
 
+/* 
+ * Given the HEX representation of machine code and the
+ * PC value, it decodes the instruction to its assembly equivalent.
+ * PC value is needed to calculate the absolute memory address for
+ * instructions containing an offset value to be added to 
+ * present address considering as base, e.g. CALL.
+ * 
+ * Bit masking and bit shifting operations have been done
+ * according to Chapter - 5 (Instructions) of SPARC v8 manual.
+ * Field specifications strictly adheres to Format - I, II, III
+ * instruction as described in the section referred.
+ * 
+ * Decoding of instructions refers to Appendix 'B' - 'Instruction Definitions'
+ * section of SPARC v8 manual. Subsections have been referred in form of
+ * B.<x>, <x> being a number referring to specific subsection of the appendix.
+ */
 char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 {
 	char* disassembledInstruction = (char*)malloc(50);
@@ -13,14 +29,22 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 	char* address = NULL;
 	char* reg_or_imm = NULL;
 	
-	// Pack Word together
+	/* Reads four bytes one by one starting from lowest to highest. Once a byte is read, it is left shifted
+         * by 24 bits followed by right shifted by 24 bits to clear higher order 24 bits, if set by sign extension 
+         * caused by widening of data during auto-casting. Casting takes place because of hexDigit being an
+         * unsigned long (32 bits) while cpuInstruction is an array of type char (8 bits). All four bytes are
+         * packed together to form a 32 bit 'instructionWord'.
+         */
 	instructionWord = 0;
 	hexDigit = cpuInstruction[0]; hexDigit = (hexDigit << 24) >> 24; instructionWord = (instructionWord << 8) | hexDigit;
 	hexDigit = cpuInstruction[1]; hexDigit = (hexDigit << 24) >> 24; instructionWord = (instructionWord << 8) | hexDigit;
 	hexDigit = cpuInstruction[2]; hexDigit = (hexDigit << 24) >> 24; instructionWord = (instructionWord << 8) | hexDigit;
 	hexDigit = cpuInstruction[3]; hexDigit = (hexDigit << 24) >> 24; instructionWord = (instructionWord << 8) | hexDigit;
 	
-	op = instructionWord >> 30;
+	op = instructionWord >> 30; 
+        sparc_instruction_fields.op = op;
+        sparc_instruction_fields.op2 = 1;       // op2 = 1 is unimplemented
+        sparc_instruction_fields.op3 = 0x22;    // op3 = 0x22 is unimplemented
 	
 	// Format - I instruction
 	// CALL
@@ -36,7 +60,8 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 	// Format - II instruction
     	if(op == 0)
     	{
-    		op2 = (instructionWord & 0x01C00000) >> 22;
+    		op2 = (instructionWord & 0x01C00000) >> 22; 
+                sparc_instruction_fields.op2 = op2;
     		
 			if(op2 == 4)
 			{				
@@ -119,7 +144,7 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 							case 0b1100: opcode = "fbuge"; break;
 							case 0b1101: opcode = "fble"; break;
 							case 0b1110: opcode = "fbule"; break;							
-							case 0b1111: opcode = "fbuo"; break;	
+							case 0b1111: opcode = "fbo"; break;	
 						}
 						break;
 					}
@@ -164,13 +189,13 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
     	else
         {
             rd = (instructionWord & 0x3E000000) >> 25;
-            op3 = (instructionWord & 0x01F80000) >> 19;
+            op3 = (instructionWord & 0x01F80000) >> 19; sparc_instruction_fields.op3 = op3;
             rs1 = (instructionWord & 0x00007C000) >> 14;
             i = (instructionWord & 0x00002000) >> 13;
             simm13 = (instructionWord & 0x00001FFF);
             rs2 = instructionWord & 0x0000201F;
             // asi = (instructionWord & 0x00001FE0) >> 5;
-            opf = (instructionWord & 0x00003FE0) >> 5;
+            opf = (instructionWord & 0x00003FE0) >> 5; sparc_instruction_fields.opf = opf;
             
             // Sign extend simm13
             sign_extended_simm13 = (simm13 & 0x1FFF) | ((simm13 & 0x1000) ? 0xFFFFE000 : 0);
@@ -637,43 +662,46 @@ char* decodeInstruction(char* cpuInstruction, unsigned long regPC)
 
 
 
-/*char* decodeSyntheticInstruction(char* disassembledInstruction)
-{
-	char* syntheticInstruction = (char*)malloc(50);
-	return NULL;
-}*/
-
-
-
+/*
+ * Translates the effective address for LOAD/STORE instructions
+ * and returns the translated address as a string,
+ * e.g. '%g3 + 0x25' or '%l2 + %l3'.
+ * 
+ * The effective address for a load/store instruction is 
+ * r[rs1] + r[rs2], if i = 0, or r[rs1] + sign_ext(simm13), if i = 1.
+ * The 'i' bit selects the second ALU operand for (integer) arithmetic and
+ * load/store instructions. If i = 0, the operand is r[rs2]. If i = 1, 
+ * the operand is 'simm13', sign-extended from 13 to 32 bits.
+ */
 char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned long simm13, int registerTypeIdentifier)
 {
 	char* address = (char*)malloc(30);
 	char* hexNumber = (char*)malloc(32);
 	address[0] = '\0';
 	
-//	if(rs1 != 0)
-//	{
-		switch(registerTypeIdentifier)
-		{
-			case 1: strcat(address, getIntegerRegisterName(rs1)); break;           // Integer register
-			case 2: strcat(address, getFloatingRegisterName(rs1)); break;          // Floating point register
-			case 3: strcat(address, getCoProcessorRegisterName(rs1)); break;       // Co-Processor register
-		}
-//	}
 
+        // Integer, Floating-point or Co-Processor register?
+        switch(registerTypeIdentifier)
+        {
+                case 1: strcat(address, getIntegerRegisterName(rs1)); break;           // Integer register.
+                case 2: strcat(address, getFloatingRegisterName(rs1)); break;          // Floating point register.
+                case 3: strcat(address, getCoProcessorRegisterName(rs1)); break;       // Co-Processor register.
+        }
+
+        // Second operand is rs2.
 	if(i == 0) 
 	{
-//		if(rs2 != 0)
-//		{
-			strcat(address, " + ");
-			switch(registerTypeIdentifier)
-			{
-				case 1: strcat(address, getIntegerRegisterName(rs2)); break;       // Integer register
-				case 2: strcat(address, getFloatingRegisterName(rs2)); break;      // Floating point register
-				case 3: strcat(address, getCoProcessorRegisterName(rs2)); break;   // Co-Processor register
-			}
-//		}
+            strcat(address, " + ");
+            switch(registerTypeIdentifier)
+            {
+                    case 1: strcat(address, getIntegerRegisterName(rs2)); break;            // Integer register.
+                    case 2: strcat(address, getFloatingRegisterName(rs2)); break;           // Floating point register.
+                    case 3: strcat(address, getCoProcessorRegisterName(rs2)); break;        // Co-Processor register.
+            }
+
 	}
+        
+        // Second operand is simm13.
 	else
 	{
 		strcat(address, " + ");
@@ -687,20 +715,31 @@ char* getAddress(unsigned long rs1, unsigned long rs2, unsigned long i, unsigned
 
 
 
+/*
+ * Returns the second operand of a LOAD/STORE instruction as a string.
+ * 
+ * The 'i' bit selects the second ALU operand for (integer) arithmetic and
+ * load/store instructions. If i = 0, the operand is r[rs2]. If i = 1, 
+ * the operand is 'simm13', sign-extended from 13 to 32 bits.
+ */
 char* getReg_Or_Imm(unsigned long rs2, unsigned long i, unsigned long simm13, int registerTypeIdentifier)
 {
 	char* address = (char*)malloc(30);
 	char* hexNumber = (char*)malloc(32);
 	
+        // Second operand is rs2.
 	if(i == 0) 
 	{
+                // Integer, Floating-point or Co-Processor register?
 		switch(registerTypeIdentifier)
 		{
-			case 1: strcpy(address, getIntegerRegisterName(rs2)); break;       // Integer register
-			case 2: strcpy(address, getFloatingRegisterName(rs2)); break;      // Floating point register
-			case 3: strcpy(address, getCoProcessorRegisterName(rs2)); break;   // Co-Processor register
+			case 1: strcpy(address, getIntegerRegisterName(rs2)); break;       // Integer register.
+			case 2: strcpy(address, getFloatingRegisterName(rs2)); break;      // Floating point register.
+			case 3: strcpy(address, getCoProcessorRegisterName(rs2)); break;   // Co-Processor register.
 		}
 	}
+        
+        // Second operand is simm13.
 	else
 	{
 		sprintf(hexNumber, "0x%lX", simm13);
@@ -712,6 +751,17 @@ char* getReg_Or_Imm(unsigned long rs2, unsigned long i, unsigned long simm13, in
 
 
 
+/*
+ * Returns the mnemonic name of an Integer register as string
+ * (e.g. %g6, %l7) taking 'registerIdentifier' (e.g. 6, 7) as argument.
+ * Translation is done according to the specification given in
+ * Chapter - 4 (Registers) of SPARC v8 manual.
+ * 
+ * in[0] - in[7]         => r[24] - r[31]
+ * local[0] - local[7]   => r[16] - r[23]
+ * out[0] - out[7]       => r[8] - r[15]
+ * global[0] - global[7] => r[0] - r[7]
+ */
 char* getIntegerRegisterName(unsigned long registerIdentifier)
 {
 	char* registerName = (char*) malloc(4);
@@ -737,6 +787,10 @@ char* getIntegerRegisterName(unsigned long registerIdentifier)
 
 
 
+/*
+ * Returns the mnemonic name of a Floating-point register as string
+ * (e.g. %f31) taking 'registerIdentifier' (e.g. 31) as argument.
+ */
 char* getFloatingRegisterName(unsigned long registerIdentifier)
 {
 	char* registerName = (char*) malloc(4);
@@ -752,6 +806,10 @@ char* getFloatingRegisterName(unsigned long registerIdentifier)
 
 
 
+/*
+ * Returns the mnemonic name of a Co-Processor register as string
+ * (e.g. %f31) taking 'registerIdentifier' (e.g. 31) as argument.
+ */
 char* getCoProcessorRegisterName(unsigned long registerIdentifier)
 {
 	char* registerName = (char*) malloc(4);
@@ -764,11 +822,3 @@ char* getCoProcessorRegisterName(unsigned long registerIdentifier)
 	free(registerIndex);
 	return registerName;
 }
-
-
-
-/*int main()
-{
-	char cpuInstruction[4] = {0x10, 0x80, 0x00, 0x02};
-	printf("%s\n",decodeInstruction(cpuInstruction));
-}*/

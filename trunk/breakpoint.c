@@ -12,6 +12,11 @@ static unsigned short isLastWatchPointEncountered = 0;
 
 
 
+/* 
+ * Clears list of breakpoints by deleting breakpoint nodes
+ * until the last one, thereby deallocating nodes and freeing 
+ * up memory one by one. Sets breakPointList to NULL.
+ */
 void initializeBreakPointList()
 {
 	if(breakPointList != NULL)
@@ -20,77 +25,104 @@ void initializeBreakPointList()
 
 
 
+/* 
+ * Adds either a breakPoint or a watchPoint depending on breakPointType to the
+ * list of breakpoints. The breakPoint or watchPoint is set at memoryAddress.
+ */
 int addBreakPoint(unsigned long memoryAddress, unsigned short breakPointType)
 {
 	struct breakPoint* prevBreakPoint, *curBreakPoint, *newBreakPoint;
 
+        // Allocate memory for a new breakpoint
 	newBreakPoint = (struct breakPoint*)malloc(sizeof(struct breakPoint));
 	if(!newBreakPoint)
 		return BREAKPOINT_ALLOCATION_ERROR;
 	
-	// Allocate one node if the list is empty
+	/* If breakPointList is empty, set the newly created node
+         * to be the first one of the list of breakpoints.
+         */
 	if(!breakPointList)
 	{
 		breakPointList = newBreakPoint;
 		curBreakPoint = breakPointList;
 	}
+        
+        // breakPointList is not empty
 	else
 	{
-		curBreakPoint = breakPointList;
+		/* Maintain separate pointers to previous as well as current breakpoint node.
+                 * Initialize both the pointers to the head of the breakPointList.
+                 */ 
+                curBreakPoint = breakPointList;
 		prevBreakPoint = breakPointList;
 
+                /* Traverse breakPointList either till end or memoryAddress
+                 * matches to one which breakpoint is already set on.
+                 */
 		while(curBreakPoint && (prevBreakPoint->memoryAddress != memoryAddress))
 		{
 			prevBreakPoint = curBreakPoint;
 			curBreakPoint = curBreakPoint->nextBreakPoint;
 		}
 	
+                // If a breakpoint is already set, nothing else needs to be done.
 		if(prevBreakPoint->memoryAddress == memoryAddress)
 			return RET_SUCCESS;
+                
+                /* Otherwise, we are at the end of the list.
+                 * Set the newly created breakpoint to be the last one.
+                 */
 		else
 		{
-			// We are at the end of the list
 			prevBreakPoint->nextBreakPoint = newBreakPoint;
 			curBreakPoint = prevBreakPoint->nextBreakPoint;
 		}
 	}
 
-	breakPointSerial++;
-        curBreakPoint->breakPointSerial = breakPointSerial;
-	curBreakPoint->memoryAddress = memoryAddress;
-        curBreakPoint->breakPointType = breakPointType;
-	curBreakPoint->nextBreakPoint = NULL;
+	breakPointSerial++;                                     // Increase serial as a new node has been added.
+        curBreakPoint->breakPointSerial = breakPointSerial;     // Set serial of breakpoint.
+	curBreakPoint->memoryAddress = memoryAddress;           // Set memoryAddress which breakpoint/watchpoint is set at.
+        curBreakPoint->breakPointType = breakPointType;         // Breakpoint or Watchpoint?
+	curBreakPoint->nextBreakPoint = NULL;                   // Terminate the list.
 
 	return RET_SUCCESS;
 }
 
 
 
+/* 
+ * Given the serial of a breakPoint, delete the node associated.
+ */
 int deleteBreakPoint(unsigned short index)
 {
 	struct breakPoint* prevBreakPoint, *curBreakPoint, *nextBreakPoint;
 
+        // Deletion can take place only if breakPointList is non-empty.
 	if(breakPointList)
 	{
-		if(breakPointList->breakPointSerial == index)
+		// Is it the first breakPoint we are attempting to delete?
+                if(breakPointList->breakPointSerial == index)
 		{
-			// Delete first breakpoint
 			nextBreakPoint = breakPointList->nextBreakPoint;
 			free(breakPointList);
 			breakPointList = nextBreakPoint;
 			return RET_SUCCESS;
 		}
+                
+                // A non-first breakPoint has to be deleted.
 		else
 		{
-			// Delete non-first breakpoint
-
-			curBreakPoint = breakPointList;
+			// Set current breakPoint to be the head of the list.
+                        curBreakPoint = breakPointList;
+                        
+                        // Start traversing until the specified breakPoint is found or the end is reached.
 			while((curBreakPoint->breakPointSerial != index) && curBreakPoint->nextBreakPoint)
 			{
 				prevBreakPoint = curBreakPoint;
 				curBreakPoint = curBreakPoint->nextBreakPoint;
 			}
 
+                        // If we have found the specified breakPoint, delete it.
 			if(curBreakPoint->breakPointSerial ==index)
 			{
 				nextBreakPoint = curBreakPoint->nextBreakPoint;
@@ -106,6 +138,10 @@ int deleteBreakPoint(unsigned short index)
 
 
 
+/*
+ * Returns the first breakPoint, if isReset = 1
+ * Returns the next breakPoint, if isReset = 0
+ */
 struct breakPoint* getBreakPoint(unsigned short isReset)
 {
 	static struct breakPoint* curBreakPoint;
@@ -133,14 +169,20 @@ struct breakPoint* getBreakPoint(unsigned short isReset)
 
 
 
+/* 
+ * Returns 1, if a breakPoint is set at address 
+ * contained in regPC, otherwise returns 0.
+ */
 int isBreakPoint(unsigned long regPC)
 {
 	struct breakPoint *curBreakPoint;
 
 	curBreakPoint = breakPointList;
 
+        // Iterate over list of breakPoints
 	while(curBreakPoint)
 	{
+            // Check for breakPointType as it can be a watchPoint, too
             if(curBreakPoint->breakPointType == BREAK_POINT)
             {
                 if(curBreakPoint->memoryAddress == regPC) 
@@ -174,6 +216,9 @@ int isBreakPoint(unsigned long regPC)
 
 
 
+/* 
+ * Returns the serial number of last breakPoint added
+ */
 short getBreakPointSerial()
 {
     return breakPointSerial;
@@ -181,6 +226,10 @@ short getBreakPointSerial()
 
 
 
+/* 
+ * Returns 1, if a watchPoint is set at address 
+ * contained in regPC, otherwise returns 0.
+ */
 int isWatchPoint(unsigned long memoryAddress, unsigned long regPC)
 {
 	struct breakPoint *curBreakPoint; 
@@ -223,92 +272,10 @@ int isWatchPoint(unsigned long memoryAddress, unsigned long regPC)
 
 
 
+/* 
+ * Returns the serial number of last watchPoint added
+ */
 short getWatchPointSerial()
 {
     return watchPointSerial;
 }
-
-
-
-/*int main()
-{
-	struct breakPoint* curBreakPoint;
-	unsigned short isReset;
-	unsigned long breakPointAddress;
-
-	addBreakPoint(0x40000000);
-	addBreakPoint(0x80000000);
-	addBreakPoint(0x70000000);
-	addBreakPoint(0x20000000);
-	addBreakPoint(0x60000000);
-	addBreakPoint(0x70000000);
-
-	isReset = 0;
-	while(1)
-	{
-		breakPointAddress = getBreakPoint(&isReset);
-		if(isReset == 0)
-			printf("0x%lx\n", breakPointAddress);
-		else
-			break;
-	}
-
-	printf("\n----------------\n");
-	deleteBreakPoint(1);
-	deleteBreakPoint(3);
-	deleteBreakPoint(3);
-	deleteBreakPoint(4);
-
-	isReset = 0;
-	while(1)
-	{
-		breakPointAddress = getBreakPoint(&isReset);
-		if(isReset == 0)
-			printf("0x%lx\n", breakPointAddress);
-		else
-			break;
-	}
-	
-	printf("\n----------------\n");
-	addBreakPoint(0x50000000);
-	addBreakPoint(0x80000000);
-	addBreakPoint(0x70000000);
-	
-	isReset = 0;
-	breakPointAddress = getBreakPoint(&isReset);
-	if(isReset == 0)
-		printf("0x%lx\n", breakPointAddress);
-	breakPointAddress = getBreakPoint(&isReset);
-	if(isReset == 0)
-		printf("0x%lx\n", breakPointAddress);
-		
-	isReset = 1;
-	breakPointAddress = getBreakPoint(&isReset);
-	if(isReset == 0)
-		printf("0x%lx\n", breakPointAddress);
-
-	printf("\n----------------\n");
-	isReset = 1;
-	breakPointAddress = getNextBreakPoint(0x45000000, &isReset);
-	if(isReset == 0)
-		printf("0x%lx\n", breakPointAddress);
-	else
-		printf("No such breakpoint exixts\n");
-
-	isReset = 0;
-	breakPointAddress = getNextBreakPoint(0x55000000, &isReset);
-		if(isReset == 0)
-			printf("0x%lx\n", breakPointAddress);
-		else
-			printf("No such breakpoint exixts\n");
-
-	isReset = 0;
-	breakPointAddress = getNextBreakPoint(0x85000000, &isReset);
-	if(isReset == 0)
-		printf("0x%lx\n", breakPointAddress);
-	else
-		printf("No such breakpoint exists\n");
-
-
-	return RET_SUCCESS;
-}*/

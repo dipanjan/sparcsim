@@ -2,6 +2,10 @@
 
 
 
+/*
+ * Initializes loader by returning a handle
+ * to the ELF binary after opening.
+ */
 int initializeLoader(char *elfBinary)
 {
 	static int fileDescriptor = RET_FAILURE;
@@ -21,6 +25,16 @@ int initializeLoader(char *elfBinary)
 
 
 
+/*
+ * Extracts out relevant sections (e.g. .text, .data, .bss, .rodata)
+ * from ELF binary and loads to appropriate memory locations starting
+ * from section entry point address as specified by sh_addr member of
+ * GElf_Shdr structure. Returns an array of structure, each structure
+ * carrying the information, viz. section name, entry point address,
+ * size, type, number of instructions etc. The method makes use of
+ * LIBELF API (licensed under LGPL) developed by Michael Riepe. LIBELF
+ * follows BSD 3.0 specification for ELF manipulation.
+ */
 struct loadedSections* load_sparc_instructions(char *elfBinary)
 {
 	GElf_Ehdr elf_header;		// ELF header
@@ -62,7 +76,7 @@ struct loadedSections* load_sparc_instructions(char *elfBinary)
 
 	gelf_getehdr(elf, &elf_header);
 
-	// Iterate through section headers
+	// Iterate over section headers
 	while((scn = elf_nextscn(elf, scn)) != 0)
 	{
 		gelf_getshdr(scn, &shdr);
@@ -117,19 +131,3 @@ struct loadedSections* load_sparc_instructions(char *elfBinary)
 	elfSectionsPrevPtr->nextSection = NULL;
 	return elfSections;
 }
-
-
-
-/*int main(int argc, char* argv[])
-{
-	load_sparc_elf(argv[1]);
-	int count;
-	for(count = 0x10054; count <= 0x10058; count = count+= 4)
-	{
-		char* cpuInstruction = readWordAsString(count);
-		displayWord(cpuInstruction, 0);
-		free(cpuInstruction);
-		printf("\n");
-		return 0;
-	}
-}*/

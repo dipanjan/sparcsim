@@ -2,6 +2,7 @@
 
 
 
+// Returns a single bit at a specified position of a 32-bit bitStream
 int getBit(unsigned long bitStream, int position)
 {
 	int bit;
@@ -11,6 +12,7 @@ int getBit(unsigned long bitStream, int position)
 
 
 
+// Sets a single bit at a specified position of a 32-bit bitStream
 unsigned long setBit(unsigned long bitStream, int position)
 {
 	unsigned long setBitStream = bitStream;
@@ -20,6 +22,7 @@ unsigned long setBit(unsigned long bitStream, int position)
 
 
 
+// Clears a single bit at a specified position of a 32-bit bitStream
 unsigned long clearBit(unsigned long bitStream, int position)
 {
 	unsigned long clearedBitStream = bitStream;
@@ -29,6 +32,7 @@ unsigned long clearBit(unsigned long bitStream, int position)
 
 
 
+// Toggles a single bit at a specified position of a 32-bit bitStream
 unsigned long toggleBit(unsigned long bitStream, int position)
 {
 	unsigned long toggledBitStream = bitStream;
@@ -38,6 +42,7 @@ unsigned long toggleBit(unsigned long bitStream, int position)
 
 
 
+// Returns a pointer to a string containing bytes within startPosition and endPosition extracted from 32-bit bitStream
 char* showBits(unsigned long bitStream, int startPosition, int endPosition)
 {
 	// Allocate one extra byte for NULL character
@@ -48,16 +53,3 @@ char* showBits(unsigned long bitStream, int startPosition, int endPosition)
 	bits[bitIndex] = '\0';
 	return bits;
 }
-
-
-
-/*int main()
-{
-    printf("getBit  : %d\n", getBit(0x00009FE1, 4));
-	printf("showBits : %s\n", showBits(0x00009FE1, 0, 15));
-	printf("setBit   : %s\n", showBits(setBit(0x00009FE1, 3), 0, 15));
-	printf("clearBit : %s\n", showBits(clearBit(0x00009FE1, 0), 0, 15));
-	printf("toggleBit: %s\n", showBits(toggleBit(0x00009FE1, 3), 0, 15));
-	printf("toggleBit: %s\n", showBits(toggleBit(0x00009FE1, 0), 0, 15));
-	return 0;
-}*/
