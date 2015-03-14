@@ -1,0 +1,7 @@
+# _Call Dispatcher_ #
+
+---
+
+
+This module acts much like a co-ordinator across all other modules. It communicates messages, extracts information from one component and passes it down to another. Dispatcher glues up the SPARCSIM system from within. Once the end user instructs the simulator, UI does some basic error checking, e.g. buffer overflow and pushes the command towards the dispatcher. Dispatcher parses the command and reports back if any
+inconsistency is found. A well-formed SPARCSIM command triggers an execution sequence within the simulator. Such tasks include initializing sub-systems, read/write simulator memory, read/write register file, loading of an ELF file into memory etc. Dispatcher knows the internal tasks to be accomplished to carry out  a single simulator command. Also, it knows the respective module responsible to do that.Therefore, it, in turn, instructs those components accordingly. Strict MVC (Model - View -  Controller) architecture has been followed in designing the simulator to incorporate  any future enhancements or bug-fixes as smooth as possible. If the UI module acts as the “View” component of MVC, it can be thought of as the “Controller” equivalent. All the  subsequent modules fall under “Model” category.
