@@ -1,0 +1,44 @@
+= _SPARCSIM – Source Code Organization_ =
+
+SPARCSIM source code is scattered across 10 C source files, 11 header files, 1 configuration file and 1 compile script. 
+
+----
+
+ * C Source files
+  # simulator.c 
+  # loader.c 
+  # decode.c 
+  # register.c 
+  # memory.c 
+  # execute.c 
+  # breakpoint.c 
+  # bits.c 
+  # trap.c 
+  # misc.c 
+
+----
+
+ * C Header files
+  # simulator.h 
+  # loader.h 
+  # decode.h 
+  # register.h 
+  # memory.h 
+  # execute.h 
+  # breakpoint.h 
+  # bits.h 
+  # trap.h 
+  # misc.h 
+  # constants.h 
+
+----
+
+ * Configuration file 
+  # sparcsim.conf
+
+----
+
+ * Compile script
+  # compile
+
+----

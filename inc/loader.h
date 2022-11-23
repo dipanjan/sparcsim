@@ -8,8 +8,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <libelf/libelf.h>
-#include <libelf/gelf.h>
+#include <libelf.h>
+#include <gelf.h>
 #include <memory.h>
 #include <constants.h>
 
